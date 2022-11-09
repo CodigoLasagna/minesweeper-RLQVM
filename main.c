@@ -1,13 +1,23 @@
 #include <stdio.h>
-#include <ncurses.h>
-#include <panel.h>
+#include "minesRLQVM.h"
+
+int update();
+void draw();
+	TWindow mainscreen;
 
 int main(){
-	initscr();			/* Start curses mode 		  */
-	printw("Hello World !!!");	/* Print Hello World		  */
-	refresh();			/* Print it on to the real screen */
-	getch();			/* Wait for user input */
-	endwin();			/* End curses mode		  */
+	lncurses();
 	
+	mainscreen = create_window(0, 0, 20, 10, 0, 0, 0, 0, 64, 32);
+	game_loop(update, draw);
+	getch();
+	endwin();
 	return 0;
+}
+
+int update(){
+	return 1;
+}
+void draw(){
+	colorizeWin(mainscreen, C_GREEN, C_NONE, 0);
 }
