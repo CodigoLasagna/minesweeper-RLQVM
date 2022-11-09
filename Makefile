@@ -1,18 +1,18 @@
-CXX := gcc -m32
-CFLAGS := -g
-LDLIBS := -lncurses -lpanel
-INC := ./res/
+CXX := gcc -m32 -lncurses -lpanel
+CFLAGS := -g -ansi -pedantic-errors
 TARGET := main
 
-SRCS := $(wildcard *.c $(INC)*.c)
+SRCS := $(wildcard *.c)
 OBJS := $(patsubst %.c,%.o,$(SRCS))
 
 all: $(TARGET)
-$(TARGET): $(OBJS)
-	$(CXX) $(LDLIBS) $^ -o $@ 
 %.o: %.c
 	$(CXX) $(CFLAGS) -c $< -o $@
+$(TARGET): $(OBJS)
+	$(CXX) $^ -o $@ 
 clean:
-	rm -rf $(TARGET) *.o $(INC)*.o
+	rm -rf $(TARGET) *.o
+cleanO:
+	rm -rf main.o
 	
 .PHONY: all clean
