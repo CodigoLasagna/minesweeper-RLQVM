@@ -1,5 +1,6 @@
 #include <ncurses.h>
 #include <panel.h>
+#include <string.h>
 
 #define C_NONE		-1
 #define C_BLACK		0
@@ -11,7 +12,7 @@
 #define C_CYAN		6
 #define C_WHITE		7
 
-typedef struct _twindow{
+typedef struct _tcontainer{
 	int term_w, term_h;
 	int width;
 	int height;
@@ -22,13 +23,20 @@ typedef struct _twindow{
 	WINDOW* win;
 	PANEL* pane;
 	
-}TWindow;
+}Tcontainer;
+
+typedef struct _tbutton{
+	int x, y;
+	char text[50], alt_text[50];
+	int fg, bg, ac;
+}Tbutton;
 
 void lncurses();
-void game_loop(int update(), void draw());
+void game_loop(int update(), void draw(), int inputs());
 
-void definePane(int x, int y, int width, int height, int type);
+Tcontainer create_container(int x, int y, int width, int height, int fg, int bg, int ac, int type, int term_w, int term_h);
 
-TWindow create_window(int x, int y, int width, int height, int fg, int bg, int ac, int type, int term_w, int term_h);
+void draw_container(Tcontainer container, int fg, int bg, int ac);
 
-void colorizeWin(TWindow window, int fg, int bg, int ac);
+Tbutton create_button(int x, int y, char text[], int fg, int bg, int ac);
+void draw_button(Tcontainer container, Tbutton button, int fg, int bg, int type_x, int type_y);

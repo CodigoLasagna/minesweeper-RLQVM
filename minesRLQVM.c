@@ -1,5 +1,5 @@
 #include "minesRLQVM.h"
-
+#include <string.h>
 
 void lncurses(){
 	initscr();
@@ -12,50 +12,98 @@ void lncurses(){
 	start_color();
 }
 
-void game_loop(int update(), void draw())
+void game_loop(int update(), void draw(), int inputs())
 {
-	while (update) {
+	while (inputs() != 'q') {
+		inputs();
+		update();
 		draw();
 		update_panels();
 		doupdate();
 	}
 }
 
-TWindow create_window(int x, int y, int width, int height, int fg, int bg, int ac, int type, int term_w, int term_h)
+Tcontainer create_container(int x, int y, int width, int height, int fg, int bg, int ac, int type, int term_w, int term_h)
 {
-	TWindow window;
-	window.x = x;
-	window.y = y;
-	window.width = width;
-	window.height = height;
-	window.fg = fg;
-	window.ac = ac;
-	window.type = type;
+	Tcontainer container;
+	container.x = x;
+	container.y = y;
+	container.width = width;
+	container.height = height;
+	container.fg = fg;
+	container.ac = ac;
+	container.type = type;
 	if (type){
-		window.win = newwin(height, width, y+(term_h/2)-(height/2), x+(term_w/2)-(width/2));
+		container.win = newwin(height, width, y+(term_h/2)-(height/2), x+(term_w/2)-(width/2));
 	}else{
-		window.win = newwin(height, width, 0, 0);
+		container.win = newwin(height, width, 0, 0);
 	}
-	window.pane = new_panel(window.win);
-	colorizeWin(window, fg, bg, ac);
-	return window;
+	container.pane = new_panel(container.win);
+	draw_container(container, fg, bg, ac);
+	return container;
 }
-void colorizeWin(TWindow window, int fg, int bg, int ac){
-	window.ac = ac;
-	window.fg = fg;
-	window.bg = bg;
-	werase(window.win);
-	if (window.type == false)
-		mvwin(window.win, window.y+(window.term_w/2)-(window.width/2), window.x+(window.term_w/2)-(window.width/2));
-	wresize(window.win, window.height, window.width);
-	init_pair(window.fg, window.fg, window.bg);
-	if (window.ac == false){
-		wattron(window.win, COLOR_PAIR(window.fg));
-		box(window.win, 0, 0);
-		wattroff(window.win, COLOR_PAIR(window.fg));
+void draw_container(Tcontainer container, int fg, int bg, int ac){
+	container.ac = ac;
+	container.fg = fg;
+	container.bg = bg;
+	werase(container.win);
+	if (container.type == false)
+		mvwin(container.win, container.y+(container.term_w/2)-(container.width/2), container.x+(container.term_w/2)-(container.width/2));
+	wresize(container.win, container.height, container.width);
+	init_pair(container.fg, container.fg, container.bg);
+	if (container.ac == false){
+		wattron(container.win, COLOR_PAIR(container.fg));
+		box(container.win, 0, 0);
+		wattroff(container.win, COLOR_PAIR(container.fg));
 	}else{
-		wattron(window.win, A_BOLD | COLOR_PAIR(window.fg));
-		box(window.win, 0, 0);
-		wattroff(window.win, A_BOLD | COLOR_PAIR(window.fg));
+		wattron(container.win, A_BOLD | COLOR_PAIR(container.fg));
+		box(container.win, 0, 0);
+		wattroff(container.win, A_BOLD | COLOR_PAIR(container.fg));
 	}
+}
+
+Tbutton create_button(int x, int y, char text[], int fg, int bg, int ac){
+	Tbutton button;
+	char altText[50];
+	int len = 0;
+	len = strlen(text);
+	altText[0] = '[';
+	altText[1] = '\0';
+	strcat(altText, text);
+	altText[len+1] = ']';
+	altText[len+2] = '\0';
+	button.x = x;
+	button.y = y;
+	strcpy(button.text, text);
+	strcpy(button.alt_text, altText);
+	button.fg = fg;
+	button.bg = bg;
+	button.ac = ac;
+	
+	return button;
+}
+
+void draw_button(Tcontainer container, Tbutton button, int fg, int bg, int type_x, int type_y){
+	int len = 0, xx = 0, yy = 0;
+	if (button.ac){
+		len = strlen(button.alt_text);
+	}else{
+		len = strlen(button.text);
+	}
+	
+	if (type_y){
+		yy = (container.height/2);
+	}
+	if (type_x){
+		xx = (container.width/2)-(len/2);
+	}
+	
+	init_pair(fg, fg, bg);
+	wattron(container.win, COLOR_PAIR(fg));
+	if (button.ac){
+		mvwprintw(container.win, button.y+yy, button.x+xx, "%s", button.alt_text);
+	}else{
+		mvwprintw(container.win, button.y+yy, button.x+xx, "%s", button.text);
+	}
+	wattroff(container.win, COLOR_PAIR(fg));
 }
