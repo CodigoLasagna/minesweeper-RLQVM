@@ -1,26 +1,27 @@
 #include "minesRLQVM.h"
-#include <string.h>
 
 void lncurses(){
 	initscr();
 	noecho();
 	cbreak();
 	curs_set(FALSE);
-	nodelay(stdscr, TRUE);
+	/*nodelay(stdscr, TRUE);*/
 	keypad(stdscr,TRUE);
 	use_default_colors();
 	start_color();
 }
 
-void game_loop(int update(), void draw(), int inputs())
+void game_loop(int update(), void draw(), int inputs(), Tconfig config)
 {
-	while (inputs() != 'q') {
-		inputs();
-		update();
-		draw();
+	int key;
+	do{
+		update(&config);
+		draw(config);
+		
 		update_panels();
 		doupdate();
-	}
+		key = inputs(&config);
+	}while(key != 'q');
 }
 
 Tcontainer create_container(int x, int y, int width, int height, int fg, int bg, int ac, int type, int term_w, int term_h)
@@ -83,7 +84,7 @@ Tbutton create_button(int x, int y, char text[], int fg, int bg, int ac){
 	return button;
 }
 
-void draw_button(Tcontainer container, Tbutton button, int fg, int bg, int type_x, int type_y){
+void draw_button(Tcontainer container, Tbutton button, int type_x, int type_y){
 	int len = 0, xx = 0, yy = 0;
 	if (button.ac){
 		len = strlen(button.alt_text);
@@ -98,12 +99,12 @@ void draw_button(Tcontainer container, Tbutton button, int fg, int bg, int type_
 		xx = (container.width/2)-(len/2);
 	}
 	
-	init_pair(fg, fg, bg);
-	wattron(container.win, COLOR_PAIR(fg));
+	init_pair(button.fg, button.fg, button.bg);
+	wattron(container.win, COLOR_PAIR(button.fg));
 	if (button.ac){
 		mvwprintw(container.win, button.y+yy, button.x+xx, "%s", button.alt_text);
 	}else{
 		mvwprintw(container.win, button.y+yy, button.x+xx, "%s", button.text);
 	}
-	wattroff(container.win, COLOR_PAIR(fg));
+	wattroff(container.win, COLOR_PAIR(button.fg));
 }

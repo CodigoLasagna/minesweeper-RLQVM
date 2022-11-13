@@ -31,12 +31,17 @@ typedef struct _tbutton{
 	int fg, bg, ac;
 }Tbutton;
 
+typedef struct _tconfig{
+	int game_status;
+	int button_id;
+}Tconfig;
+
 void lncurses();
-void game_loop(int update(), void draw(), int inputs());
+void game_loop(int update(), void draw(), int inputs(), Tconfig config);
 
 Tcontainer create_container(int x, int y, int width, int height, int fg, int bg, int ac, int type, int term_w, int term_h);
 
 void draw_container(Tcontainer container, int fg, int bg, int ac);
 
 Tbutton create_button(int x, int y, char text[], int fg, int bg, int ac);
-void draw_button(Tcontainer container, Tbutton button, int fg, int bg, int type_x, int type_y);
+void draw_button(Tcontainer container, Tbutton button, int type_x, int type_y);
