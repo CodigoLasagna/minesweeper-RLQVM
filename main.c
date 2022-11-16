@@ -35,6 +35,8 @@ Tconfig diff_inputs(Tconfig config);
 Tconfig prepare_board(Tconfig config, int width, int height);
 /*Genera las bombas y numeros*/
 Tconfig gen_board(Tconfig config);
+Tconfig clear_mist(Tconfig config);
+Tconfig show_bombs(Tconfig config);
 
 int main(){
 	Tconfig config = {0, 0, '0'};
@@ -173,13 +175,19 @@ void draw_board(Tconfig config){
 				wattroff(config.game_screen.win, A_BOLD | COLOR_PAIR(num+1));
 			}
 			if (config.game_board.field[y][x][0] == -1){
-				init_pair(1, 1, -1);
-				wattron(config.game_screen.win, COLOR_PAIR(1));
+				init_pair(5, 5, -1);
+				wattron(config.game_screen.win, COLOR_PAIR(5));
 				mvwaddch(config.game_screen.win, (yy*2)+1, (xx*4)+2, '*');
-				wattroff(config.game_screen.win, COLOR_PAIR(1));
+				wattroff(config.game_screen.win, COLOR_PAIR(5));
 			}
 			if (config.game_board.field[y][x][1] == 1){
 				mvwaddch(config.game_screen.win, (yy*2)+1, (xx*4)+2, '#');
+			}
+			if (config.game_board.field[y][x][1] == 3){
+				init_pair(1, 1, -1);
+				wattron(config.game_screen.win, COLOR_PAIR(1));
+				mvwaddch(config.game_screen.win, (yy*2)+1, (xx*4)+2, 'V');
+				wattroff(config.game_screen.win, COLOR_PAIR(1));
 			}
 		}
 	}
@@ -284,6 +292,21 @@ Tconfig board_inputs(Tconfig config){
 			config = gen_board(config);
 			config.game_board.status = 1;
 		}
+		if (config.game_board.field[y+1][x+1][0] == -1){
+			config = show_bombs(config);
+		}else{
+			config = clear_mist(config);
+		}
+	}
+	if (key == 'f'){
+		if (config.game_board.field[y+1][x+1][1] == 1)
+		{
+			config.game_board.field[y+1][x+1][1] = 3;
+		}
+		else if (config.game_board.field[y+1][x+1][1] == 3)
+		{
+			config.game_board.field[y+1][x+1][1] = 1;
+		}
 	}
 	if (key == 'q'){
 		config.game_status = 0;
@@ -292,6 +315,106 @@ Tconfig board_inputs(Tconfig config){
 		key = '0';
 	}
 	config.key = key;
+	return config;
+}
+Tconfig clear_mist(Tconfig config){
+	int i, x, y, xx, yy, dir = 0, current_step = 1, max_steps = 1, turn_cont = 0;
+	short place = 0;
+	x = config.game_board.width/2;
+	y = config.game_board.height/2;
+	for (i = 0; i < (config.game_board.width*config.game_board.height)-1; i++){
+		switch (dir) {
+			case 0:
+				x++;
+			break;
+			case 1:
+				y++;
+			break;
+			case 2:
+				x--;
+			break;
+			case 3:
+				y--;
+			break;
+		}
+		if (current_step >= max_steps){
+			current_step = 0;
+			turn_cont++;
+			dir++;
+		}
+		if (turn_cont >= 2){
+			turn_cont = 0;
+			max_steps++;
+		}
+		if (dir > 3){
+			dir = 0;
+		}
+		current_step++;
+		xx = x+1;
+		yy = y+1;
+		if (config.game_board.field[yy][xx+1][1] == 0){
+			place = 1;
+		}
+		if (config.game_board.field[yy][xx-1][1] == 0){
+			place = 1;
+		}
+		if (config.game_board.field[yy+1][xx][1] == 0){
+			place = 1;
+		}
+		if (config.game_board.field[yy-1][xx][1] == 0){
+			place = 1;
+		}
+		if (config.game_board.field[yy][xx][1] == 2){
+			place = 0;
+		}
+		if (config.game_board.field[yy][xx][1] == 3){
+			place = 0;
+		}
+		if (config.game_board.field[yy][xx][0] > 0){
+			place = 0;
+		}
+		if (config.game_board.field[yy][xx][0] == -1){
+			place = 0;
+		}
+		if (config.game_board.field[yy][xx][0] == -2){
+			place = 0;
+		}
+		if (place == 1){
+			config.game_board.field[yy][xx][1] = 0;
+		}
+		place = 0;
+	}
+	for (y = 1; y <= config.game_board.height; y++) {
+		for (x = 1; x <= config.game_board.width; x++) {
+			if (config.game_board.field[y][x][0] > 0){
+				if (config.game_board.field[y][x][1] != 3){
+					if (config.game_board.field[y][x+1][1] == 0){
+						config.game_board.field[y][x][1] = 2;
+					}
+					if (config.game_board.field[y][x-1][1] == 0){
+						config.game_board.field[y][x][1] = 2;
+					}
+					if (config.game_board.field[y+1][x][1] == 0){
+						config.game_board.field[y][x][1] = 2;
+					}
+					if (config.game_board.field[y-1][x][1] == 0){
+						config.game_board.field[y][x][1] = 2;
+					}
+				}
+			}
+		}
+	}
+	return config;
+}
+Tconfig show_bombs(Tconfig config){
+	int x, y;
+	for (y = 1; y <= config.game_board.height; y++) {
+		for (x = 1; x <= config.game_board.width; x++) {
+			if (config.game_board.field[y][x][0] == -1){
+				config.game_board.field[y][x][1] = 0;
+			}
+		}
+	}
 	return config;
 }
 
@@ -337,7 +460,7 @@ Tconfig prepare_board(Tconfig config, int width, int height){
 	for (y = 0; y < 19; y++){
 		for (x = 0; x < 19; x++){
 			config.game_board.field[y][x][0] = -2;
-			config.game_board.field[y][x][1] = 0;
+			config.game_board.field[y][x][1] = 1;
 		}
 	}
 	return config;
