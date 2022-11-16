@@ -1,5 +1,4 @@
 #include "minesRLQVM.h"
-#include <curses.h>
 
 /*Cambia la pantalla que se este viendo (menus) o tablero*/
 void change_screen(Tconfig config, int id);
@@ -322,6 +321,8 @@ Tconfig clear_mist(Tconfig config){
 	short place = 0;
 	x = config.game_board.width/2;
 	y = config.game_board.height/2;
+	x++;
+	y++;
 	for (i = 0; i < (config.game_board.width*config.game_board.height)-1; i++){
 		switch (dir) {
 			case 0:
@@ -350,37 +351,32 @@ Tconfig clear_mist(Tconfig config){
 			dir = 0;
 		}
 		current_step++;
-		xx = x+1;
-		yy = y+1;
-		if (config.game_board.field[yy][xx+1][1] == 0){
+		if (config.game_board.field[y][x+1][1] == 0){
 			place = 1;
 		}
-		if (config.game_board.field[yy][xx-1][1] == 0){
+		if (config.game_board.field[y][x-1][1] == 0){
 			place = 1;
 		}
-		if (config.game_board.field[yy+1][xx][1] == 0){
+		if (config.game_board.field[y+1][x][1] == 0){
 			place = 1;
 		}
-		if (config.game_board.field[yy-1][xx][1] == 0){
+		if (config.game_board.field[y-1][x][1] == 0){
 			place = 1;
 		}
-		if (config.game_board.field[yy][xx][1] == 2){
+		if (config.game_board.field[y][x][0] > 0){
 			place = 0;
 		}
-		if (config.game_board.field[yy][xx][1] == 3){
+		if (config.game_board.field[y][x][1] == 2){
 			place = 0;
 		}
-		if (config.game_board.field[yy][xx][0] > 0){
+		if (config.game_board.field[y][x][0] == -1){
 			place = 0;
 		}
-		if (config.game_board.field[yy][xx][0] == -1){
-			place = 0;
-		}
-		if (config.game_board.field[yy][xx][0] == -2){
+		if (config.game_board.field[y][x][1] == 3){
 			place = 0;
 		}
 		if (place == 1){
-			config.game_board.field[yy][xx][1] = 0;
+			config.game_board.field[y][x][1] = 0;
 		}
 		place = 0;
 	}
