@@ -224,7 +224,7 @@ Tconfig menu_inputs(Tconfig config){
 	if (key == 'w' || key == KEY_UP){
 		config.button_id-=1;
 	}
-	if (key == '\n'){
+	if (key == '\n' || key == ' '){
 		switch (config.button_id) {
 			case 2:
 				key = 'q';
