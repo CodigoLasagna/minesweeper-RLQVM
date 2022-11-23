@@ -34,6 +34,7 @@ Tconfig diff_inputs(Tconfig config);
 Tconfig prepare_board(Tconfig config, int width, int height);
 /*Genera las bombas y numeros*/
 Tconfig gen_board(Tconfig config);
+Tconfig spiral_clear(Tconfig config);
 Tconfig clear_mist(Tconfig config);
 Tconfig show_bombs(Tconfig config);
 
@@ -282,29 +283,35 @@ Tconfig board_inputs(Tconfig config){
 	if (config.game_board.cursor_y < 0){
 		config.game_board.cursor_y = config.game_board.height-1;
 	}
-	x = config.game_board.cursor_x;
-	y = config.game_board.cursor_y;
+	x = config.game_board.cursor_x+1;
+	y = config.game_board.cursor_y+1;
 	if (key == '\n' || key == ' ')
 	{
-		config.game_board.field[y+1][x+1][1] = 0;
+		config.game_board.field[y][x][1] = 0;
+		if (config.game_board.status == 1){
+			if (config.game_board.field[y][x][0] > 0){
+				config.game_board.field[y][x][1] = 2;
+			}
+		}
+
 		if (config.game_board.status == 0){
 			config = gen_board(config);
 			config.game_board.status = 1;
 		}
-		if (config.game_board.field[y+1][x+1][0] == -1){
+		if (config.game_board.field[y][x][0] == -1){
 			config = show_bombs(config);
 		}else{
 			config = clear_mist(config);
 		}
 	}
 	if (key == 'f'){
-		if (config.game_board.field[y+1][x+1][1] == 1)
+		if (config.game_board.field[y][x][1] == 1)
 		{
-			config.game_board.field[y+1][x+1][1] = 3;
+			config.game_board.field[y][x][1] = 3;
 		}
-		else if (config.game_board.field[y+1][x+1][1] == 3)
+		else if (config.game_board.field[y][x][1] == 3)
 		{
-			config.game_board.field[y+1][x+1][1] = 1;
+			config.game_board.field[y][x][1] = 1;
 		}
 	}
 	if (key == 'q'){
@@ -316,8 +323,9 @@ Tconfig board_inputs(Tconfig config){
 	config.key = key;
 	return config;
 }
-Tconfig clear_mist(Tconfig config){
-	int i, x, y, xx, yy, dir = 0, current_step = 1, max_steps = 1, turn_cont = 0;
+
+Tconfig spiral_clear(Tconfig config){
+	int i, x, y, dir = 0, current_step = 1, max_steps = 1, turn_cont = 0;
 	short place = 0;
 	x = config.game_board.width/2;
 	y = config.game_board.height/2;
@@ -363,6 +371,20 @@ Tconfig clear_mist(Tconfig config){
 		if (config.game_board.field[y-1][x][1] == 0){
 			place = 1;
 		}
+
+		if (config.game_board.field[y+1][x+1][1] == 0){
+			place = 1;
+		}
+		if (config.game_board.field[y-1][x-1][1] == 0){
+			place = 1;
+		}
+		if (config.game_board.field[y+1][x-1][1] == 0){
+			place = 1;
+		}
+		if (config.game_board.field[y-1][x+1][1] == 0){
+			place = 1;
+		}
+
 		if (config.game_board.field[y][x][0] > 0){
 			place = 0;
 		}
@@ -380,21 +402,43 @@ Tconfig clear_mist(Tconfig config){
 		}
 		place = 0;
 	}
+	return config;
+}
+
+Tconfig clear_mist(Tconfig config){
+	int i, x, y;
+	for (i = 0; i <= 10; i++){
+		config = spiral_clear(config);
+	}
 	for (y = 1; y <= config.game_board.height; y++) {
 		for (x = 1; x <= config.game_board.width; x++) {
 			if (config.game_board.field[y][x][0] > 0){
 				if (config.game_board.field[y][x][1] != 3){
-					if (config.game_board.field[y][x+1][1] == 0){
-						config.game_board.field[y][x][1] = 2;
-					}
-					if (config.game_board.field[y][x-1][1] == 0){
-						config.game_board.field[y][x][1] = 2;
-					}
-					if (config.game_board.field[y+1][x][1] == 0){
-						config.game_board.field[y][x][1] = 2;
-					}
-					if (config.game_board.field[y-1][x][1] == 0){
-						config.game_board.field[y][x][1] = 2;
+					if (config.game_board.field[y][x][1] != 2){
+						if (config.game_board.field[y][x+1][1] == 0){
+							config.game_board.field[y][x][1] = 2;
+						}
+						if (config.game_board.field[y][x-1][1] == 0){
+							config.game_board.field[y][x][1] = 2;
+						}
+						if (config.game_board.field[y+1][x][1] == 0){
+							config.game_board.field[y][x][1] = 2;
+						}
+						if (config.game_board.field[y-1][x][1] == 0){
+							config.game_board.field[y][x][1] = 2;
+						}
+						if (config.game_board.field[y+1][x+1][1] == 0){
+							config.game_board.field[y][x][1] = 2;
+						}
+						if (config.game_board.field[y-1][x-1][1] == 0){
+							config.game_board.field[y][x][1] = 2;
+						}
+						if (config.game_board.field[y+1][x-1][1] == 0){
+							config.game_board.field[y][x][1] = 2;
+						}
+						if (config.game_board.field[y-1][x+1][1] == 0){
+							config.game_board.field[y][x][1] = 2;
+						}
 					}
 				}
 			}
