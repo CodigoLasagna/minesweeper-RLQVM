@@ -1,4 +1,5 @@
 #include "minesRLQVM.h"
+#include <curses.h>
 
 /*Cambia la pantalla que se este viendo (menus) o tablero*/
 void change_screen(Tconfig config, int id);
@@ -18,6 +19,8 @@ void draw(Tconfig config);
 void draw_menu(Tconfig config);
 /*Dibuja el tablero*/
 void draw_board(Tconfig config);
+/*Dibuja la seccion de status*/
+void draw_status(Tconfig config);
 /*Dibuja el menu de dificultad*/
 void draw_diff(Tconfig config);
 
@@ -47,13 +50,14 @@ int main(){
 	config = prepare_board(config, 19, 19);
 	
 	config.menu = create_container(0, 0, 31, 15, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
-	config.game_screen = create_container(0, 0, 33, 17, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
+	config.game_screen = create_container(0, 0, 34, 17, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
 	config.difficulty = create_container(0, 0, 31, 15, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
+	config.game_info = create_container(0, 12, 37, 6, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
 	change_screen(config, 0);
 	config.buttons[0] = create_button(0, -1,"Iniciar juego", 0, -1, 0);
 	config.buttons[1] = create_button(0, 0, "Dificultad", 0, -1, 0);
 	config.buttons[2] = create_button(0, 1, "Salir", 0, -1, 0);
-
+	
 	config.buttons[3] = create_button(0, -1,"Facil  9x9", 0, -1, 0);
 	config.buttons[4] = create_button(0, 0, "Normal 13x13", 0, -1, 0);
 	config.buttons[5] = create_button(0, 1, "Dificil 17x17", 0, -1, 0);
@@ -68,12 +72,14 @@ void change_screen(Tconfig config, int id){
 	hide_panel(config.menu.pane);
 	hide_panel(config.game_screen.pane);
 	hide_panel(config.difficulty.pane);
+	hide_panel(config.game_info.pane);
 	switch (id) {
 		case 0:
 			show_panel(config.menu.pane);
 		break;
 		case 1:
 			show_panel(config.game_screen.pane);
+			show_panel(config.game_info.pane);
 		break;
 		case 2:
 			show_panel(config.difficulty.pane);
@@ -85,6 +91,9 @@ Tconfig update(Tconfig config){
 	switch (config.game_status) {
 		case 0:
 			config = update_menu(config);
+		break;
+		case 1:
+			config = update_board(config);
 		break;
 		case 2:
 			config = update_diffi(config);
@@ -109,6 +118,50 @@ Tconfig update_menu(Tconfig config){
 			config.buttons[i].ac = 0;
 			config.buttons[i].fg = 0;
 		}
+	}
+	return config;
+}
+
+Tconfig update_board(Tconfig config)
+{
+	int x, y;
+	if (config.game_board.cursor_x >= config.game_board.width){
+		config.game_board.cursor_x = 0;
+	}
+	if (config.game_board.cursor_y >= config.game_board.height){
+		config.game_board.cursor_y = 0;
+	}
+	if (config.game_board.cursor_x < 0){
+		config.game_board.cursor_x = config.game_board.width-1;
+	}
+	if (config.game_board.cursor_y < 0){
+		config.game_board.cursor_y = config.game_board.height-1;
+	}
+	x = config.game_board.cursor_x+1;
+	y = config.game_board.cursor_y+1;
+	if (config.game_board.update_map)
+	{
+		if (config.game_board.status != 3)
+		{
+			config.game_board.field[y][x][1] = 0;
+			if (config.game_board.status == 1){
+				if (config.game_board.field[y][x][0] > 0){
+					config.game_board.field[y][x][1] = 2;
+				}
+			}
+			
+			if (config.game_board.status == 0){
+				config = gen_board(config);
+				config.game_board.status = 1;
+			}
+			if (config.game_board.field[y][x][0] == -1){
+				config = show_bombs(config);
+				config.game_board.status = 3;
+			}else{
+				config = clear_mist(config);
+			}
+		}
+		config.game_board.update_map = 0;
 	}
 	return config;
 }
@@ -140,6 +193,7 @@ void draw(Tconfig config){
 		break;
 		case 1:
 			draw_board(config);
+			draw_status(config);
 		break;
 		case 2:
 			draw_diff(config);
@@ -175,10 +229,10 @@ void draw_board(Tconfig config){
 				wattroff(config.game_screen.win, A_BOLD | COLOR_PAIR(num+1));
 			}
 			if (config.game_board.field[y][x][0] == -1){
-				init_pair(5, 5, -1);
-				wattron(config.game_screen.win, COLOR_PAIR(5));
+				init_pair(1, 1, -1);
+				wattron(config.game_screen.win, A_BOLD | COLOR_PAIR(1));
 				mvwaddch(config.game_screen.win, (yy*2)+1, (xx*4)+2, '*');
-				wattroff(config.game_screen.win, COLOR_PAIR(5));
+				wattroff(config.game_screen.win, A_BOLD | COLOR_PAIR(1));
 			}
 			if (config.game_board.field[y][x][1] == 1){
 				mvwaddch(config.game_screen.win, (yy*2)+1, (xx*4)+2, '#');
@@ -191,6 +245,12 @@ void draw_board(Tconfig config){
 			}
 		}
 	}
+}
+
+void draw_status(Tconfig config)
+{
+	draw_container(config.game_info, C_YELLOW, C_NONE, 1);
+	mvwprintw(config.game_info.win, 1, 1, "minas: %i", config.game_board.mines);
 }
 
 void draw_diff(Tconfig config){
@@ -219,10 +279,10 @@ Tconfig inputs(Tconfig config){
 
 Tconfig menu_inputs(Tconfig config){
 	int key = getch();
-	if (key == 's' || key == KEY_DOWN){
+	if (key == 's' || key == KEY_DOWN || key == 'k'){
 		config.button_id+=1;
 	}
-	if (key == 'w' || key == KEY_UP){
+	if (key == 'w' || key == KEY_UP || key == 'l'){
 		config.button_id-=1;
 	}
 	if (key == '\n' || key == ' '){
@@ -259,52 +319,21 @@ Tconfig menu_inputs(Tconfig config){
 Tconfig board_inputs(Tconfig config){
 	int key = getch();
 	int x, y;
-	if (key == 's' || key == KEY_DOWN){
+	if (key == 's' || key == KEY_DOWN || key == 'k'){
 		config.game_board.cursor_y+=1;
 	}
-	if (key == 'w' || key == KEY_UP){
+	if (key == 'w' || key == KEY_UP || key == 'l'){
 		config.game_board.cursor_y-=1;
 	}
-	if (key == 'd' || key == KEY_RIGHT){
+	if (key == 'd' || key == KEY_RIGHT || key == ';'){
 		config.game_board.cursor_x+=1;
 	}
-	if (key == 'a' || key == KEY_LEFT){
+	if (key == 'a' || key == KEY_LEFT || key == 'j'){
 		config.game_board.cursor_x-=1;
-	}
-	if (config.game_board.cursor_x >= config.game_board.width){
-		config.game_board.cursor_x = 0;
-	}
-	if (config.game_board.cursor_y >= config.game_board.height){
-		config.game_board.cursor_y = 0;
-	}
-	if (config.game_board.cursor_x < 0){
-		config.game_board.cursor_x = config.game_board.width-1;
-	}
-	if (config.game_board.cursor_y < 0){
-		config.game_board.cursor_y = config.game_board.height-1;
 	}
 	x = config.game_board.cursor_x+1;
 	y = config.game_board.cursor_y+1;
-	if (key == '\n' || key == ' ')
-	{
-		config.game_board.field[y][x][1] = 0;
-		if (config.game_board.status == 1){
-			if (config.game_board.field[y][x][0] > 0){
-				config.game_board.field[y][x][1] = 2;
-			}
-		}
-
-		if (config.game_board.status == 0){
-			config = gen_board(config);
-			config.game_board.status = 1;
-		}
-		if (config.game_board.field[y][x][0] == -1){
-			config = show_bombs(config);
-		}else{
-			config = clear_mist(config);
-		}
-	}
-	if (key == 'f'){
+	if (key == 'f' && config.game_board.status == 1){
 		if (config.game_board.field[y][x][1] == 1)
 		{
 			config.game_board.field[y][x][1] = 3;
@@ -313,6 +342,10 @@ Tconfig board_inputs(Tconfig config){
 		{
 			config.game_board.field[y][x][1] = 1;
 		}
+	}
+	if (key == '\n' || key == ' ')
+	{
+		config.game_board.update_map = 1;
 	}
 	if (key == 'q'){
 		config.game_status = 0;
@@ -460,13 +493,13 @@ Tconfig show_bombs(Tconfig config){
 
 Tconfig diff_inputs(Tconfig config){
 	int key = getch();
-	if (key == 's' || key == KEY_DOWN){
+	if (key == 's' || key == KEY_DOWN || key == 'k'){
 		config.button_id+=1;
 	}
-	if (key == 'w' || key == KEY_UP){
+	if (key == 'w' || key == KEY_UP || key == 'l'){
 		config.button_id-=1;
 	}
-	if (key == '\n'){
+	if (key == '\n' || key == ' '){
 		switch (config.button_id) {
 			case 3:
 				config.game_board.dif = 0;
@@ -489,9 +522,10 @@ Tconfig diff_inputs(Tconfig config){
 Tconfig prepare_board(Tconfig config, int width, int height){
 	int y, x;
 	config.game_board.status = 0;
+	config.game_board.update_map = 0;
 	config.game_board.width = width;
 	config.game_board.height = height;
-
+	
 	config.game_board.cursor_x = width/2;
 	config.game_board.cursor_y = height/2;
 	
@@ -503,6 +537,13 @@ Tconfig prepare_board(Tconfig config, int width, int height){
 			config.game_board.field[y][x][1] = 1;
 		}
 	}
+	
+	config.game_info.width = (config.game_screen.height*2)-1;
+	config.game_info.y = -(height+3);
+	config.game_board.mines = 10;
+	config.game_board.flags = config.game_board.mines;
+	config.game_board.freeCells = (width*height)-config.game_board.mines;
+	
 	return config;
 }
 
@@ -523,9 +564,9 @@ Tconfig gen_board(Tconfig config)
 	while(mines > 0){
 		if ((rand()%10) == 0)
 		{
-			y = (rand()%config.game_board.height-1)+1;
-			x = (rand()%config.game_board.width-1)+1;
-			if (config.game_board.field[y+1][x+1][0] != -11){
+			y = (rand()%config.game_board.height);
+			x = (rand()%config.game_board.width);
+			if (config.game_board.field[y+1][x+1][0] != -1){
 				if (x != config.game_board.cursor_x && y != config.game_board.cursor_y)
 				{
 					config.game_board.field[y+1][x+1][0] = -1;

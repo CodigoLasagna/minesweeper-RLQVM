@@ -43,6 +43,10 @@ typedef struct _board{
 	int cursor_x, cursor_y;
 	int field[19][19][2];
 	int status;
+	int update_map;
+	int mines;
+	int flags;
+	int freeCells;
 }Tboard;
 
 /*La estructura para controlar configuraciones generales del juego*/
@@ -51,6 +55,7 @@ typedef struct _tconfig{
 	int button_id;
 	int key;
 	Tcontainer menu, game_screen, difficulty;
+	Tcontainer game_info;
 	Tbutton buttons[8];
 	Tboard game_board;
 }Tconfig;
