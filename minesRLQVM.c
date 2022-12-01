@@ -1,4 +1,5 @@
 #include "minesRLQVM.h"
+#include <curses.h>
 
 void lncurses(){
 	initscr();
@@ -9,6 +10,14 @@ void lncurses(){
 	keypad(stdscr,TRUE);
 	use_default_colors();
 	start_color();
+	init_pair(0, 0, -1);
+	init_pair(1, 1, -1);
+	init_pair(2, 2, -1);
+	init_pair(3, 3, -1);
+	init_pair(4, 4, -1);
+	init_pair(5, 5, -1);
+	init_pair(6, 6, -1);
+	init_pair(7, 7, -1);
 }
 
 void game_loop(Tconfig update(), void draw(), Tconfig inputs(), Tconfig config)
@@ -56,7 +65,6 @@ void draw_container(Tcontainer container, int fg, int bg, int ac){
 	if (container.type == true){
 		mvwin(container.win, container.y+(container.term_h/2)-(container.height/2), container.x+(container.term_w/2)-(container.width/2));
 	}
-	init_pair(container.fg, container.fg, container.bg);
 	if (container.ac == false){
 		wattron(container.win, COLOR_PAIR(container.fg));
 		box(container.win, 0, 0);
@@ -104,7 +112,6 @@ void draw_button(Tcontainer container, Tbutton button, int type_x, int type_y){
 		xx = (container.width/2)-(len/2);
 	}
 	
-	init_pair(button.fg, button.fg, button.bg);
 	wattron(container.win, COLOR_PAIR(button.fg));
 	if (button.ac){
 		mvwprintw(container.win, button.y+yy, button.x+xx, "%s", button.alt_text);

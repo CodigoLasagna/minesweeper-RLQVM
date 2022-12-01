@@ -1,5 +1,4 @@
 #include "minesRLQVM.h"
-#include <curses.h>
 
 /*Cambia la pantalla que se este viendo (menus) o tablero*/
 void change_screen(Tconfig config, int id);
@@ -34,7 +33,7 @@ Tconfig board_inputs(Tconfig config);
 Tconfig diff_inputs(Tconfig config);
 
 /*Prepara el tablero para comenzar a jugar*/
-Tconfig prepare_board(Tconfig config, int width, int height);
+Tconfig prepare_board(Tconfig config, int width, int height, int mines);
 /*Genera las bombas y numeros*/
 Tconfig gen_board(Tconfig config);
 Tconfig spiral_clear(Tconfig config);
@@ -47,7 +46,7 @@ int main(){
 	srand(time(NULL));
 	lncurses();
 	getmaxyx(stdscr, MAX_HEIGHT, MAX_WIDTH);
-	config = prepare_board(config, 19, 19);
+	config = prepare_board(config, 19, 19, 0);
 	
 	config.menu = create_container(0, 0, 31, 15, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
 	config.game_screen = create_container(0, 0, 34, 17, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
@@ -124,7 +123,7 @@ Tconfig update_menu(Tconfig config){
 
 Tconfig update_board(Tconfig config)
 {
-	int x, y;
+	int x, y, cells;
 	if (config.game_board.cursor_x >= config.game_board.width){
 		config.game_board.cursor_x = 0;
 	}
@@ -141,27 +140,52 @@ Tconfig update_board(Tconfig config)
 	y = config.game_board.cursor_y+1;
 	if (config.game_board.update_map)
 	{
-		if (config.game_board.status != 3)
+		if (config.game_board.status == 0){
+			config = gen_board(config);
+			config.game_board.status = 1;
+		}
+		if (config.game_board.status < 2)
 		{
-			config.game_board.field[y][x][1] = 0;
-			if (config.game_board.status == 1){
-				if (config.game_board.field[y][x][0] > 0){
+			if (config.game_board.field[y][x][1] != 0)
+			{
+				config.game_board.field[y][x][1] = 0;
+			}
+			
+			if (config.game_board.field[y][x][0] > 0){
+				if (config.game_board.field[y][x][1] != 2)
+				{
 					config.game_board.field[y][x][1] = 2;
 				}
 			}
-			
-			if (config.game_board.status == 0){
-				config = gen_board(config);
-				config.game_board.status = 1;
-			}
 			if (config.game_board.field[y][x][0] == -1){
 				config = show_bombs(config);
-				config.game_board.status = 3;
+				config.game_board.status = 2;
 			}else{
 				config = clear_mist(config);
 			}
 		}
 		config.game_board.update_map = 0;
+	}
+	cells = config.game_board.width*config.game_board.height;
+	cells -= config.game_board.mines;
+	for(y = 1; y < config.game_board.width+1; y++){
+		for(x = 1; x < config.game_board.width+1; x++){
+			if (config.game_board.field[y][x][1] != 1)
+			{
+				if (config.game_board.field[y][x][1] != 3)
+				{
+					if (config.game_board.field[y][x][0] != -1)
+					{
+						cells--;
+					}
+				}
+			}
+		}
+	}
+	config.game_board.freeCells = cells;
+	if (cells == 0)
+	{
+		config.game_board.status = 3;
 	}
 	return config;
 }
@@ -223,13 +247,11 @@ void draw_board(Tconfig config){
 			yy = y-1;
 			num = config.game_board.field[y][x][0];
 			if (num > 0){
-				init_pair(num+1, num+1, -1);
 				wattron(config.game_screen.win, A_BOLD | COLOR_PAIR(num+1));
 				mvwprintw(config.game_screen.win, (yy*2)+1, (xx*4)+2, "%i", config.game_board.field[y][x][0]);
 				wattroff(config.game_screen.win, A_BOLD | COLOR_PAIR(num+1));
 			}
 			if (config.game_board.field[y][x][0] == -1){
-				init_pair(1, 1, -1);
 				wattron(config.game_screen.win, A_BOLD | COLOR_PAIR(1));
 				mvwaddch(config.game_screen.win, (yy*2)+1, (xx*4)+2, '*');
 				wattroff(config.game_screen.win, A_BOLD | COLOR_PAIR(1));
@@ -237,8 +259,12 @@ void draw_board(Tconfig config){
 			if (config.game_board.field[y][x][1] == 1){
 				mvwaddch(config.game_screen.win, (yy*2)+1, (xx*4)+2, '#');
 			}
+			if (config.game_board.field[y][x][1] == 4){
+				wattron(config.game_screen.win, COLOR_PAIR(1));
+				mvwaddch(config.game_screen.win, (yy*2)+1, (xx*4)+2, 'O');
+				wattroff(config.game_screen.win, COLOR_PAIR(1));
+			}
 			if (config.game_board.field[y][x][1] == 3){
-				init_pair(1, 1, -1);
 				wattron(config.game_screen.win, COLOR_PAIR(1));
 				mvwaddch(config.game_screen.win, (yy*2)+1, (xx*4)+2, 'V');
 				wattroff(config.game_screen.win, COLOR_PAIR(1));
@@ -250,7 +276,8 @@ void draw_board(Tconfig config){
 void draw_status(Tconfig config)
 {
 	draw_container(config.game_info, C_YELLOW, C_NONE, 1);
-	mvwprintw(config.game_info.win, 1, 1, "minas: %i", config.game_board.mines);
+	mvwprintw(config.game_info.win, 1, 2, "[V]: %i", config.game_board.flags);
+	mvwprintw(config.game_info.win, 2, 2, "[#]: %i", config.game_board.freeCells);
 }
 
 void draw_diff(Tconfig config){
@@ -294,13 +321,13 @@ Tconfig menu_inputs(Tconfig config){
 				config.game_status = 1;
 				switch (config.game_board.dif) {
 					case 0:
-						config = prepare_board(config, 9, 9);
+						config = prepare_board(config, 9, 9, 10);
 					break;
 					case 1:
-						config = prepare_board(config, 13, 13);
+						config = prepare_board(config, 13, 13, 40);
 					break;
 					case 2:
-						config = prepare_board(config, 17, 17);
+						config = prepare_board(config, 17, 17, 100);
 					break;
 				}
 				change_screen(config, config.game_status);
@@ -336,11 +363,15 @@ Tconfig board_inputs(Tconfig config){
 	if (key == 'f' && config.game_board.status == 1){
 		if (config.game_board.field[y][x][1] == 1)
 		{
-			config.game_board.field[y][x][1] = 3;
+			if (config.game_board.flags > 0){
+				config.game_board.field[y][x][1] = 3;
+				config.game_board.flags--;
+			}
 		}
 		else if (config.game_board.field[y][x][1] == 3)
 		{
 			config.game_board.field[y][x][1] = 1;
+			config.game_board.flags++;
 		}
 	}
 	if (key == '\n' || key == ' ')
@@ -430,8 +461,12 @@ Tconfig spiral_clear(Tconfig config){
 		if (config.game_board.field[y][x][1] == 3){
 			place = 0;
 		}
-		if (place == 1){
-			config.game_board.field[y][x][1] = 0;
+		if (place == 1)
+		{
+			if (config.game_board.field[y][x][1] == 1)
+			{
+				config.game_board.field[y][x][1] = 0;
+			}
 		}
 		place = 0;
 	}
@@ -439,7 +474,7 @@ Tconfig spiral_clear(Tconfig config){
 }
 
 Tconfig clear_mist(Tconfig config){
-	int i, x, y;
+	int i, x, y, place = 0;
 	for (i = 0; i <= 10; i++){
 		config = spiral_clear(config);
 	}
@@ -449,32 +484,40 @@ Tconfig clear_mist(Tconfig config){
 				if (config.game_board.field[y][x][1] != 3){
 					if (config.game_board.field[y][x][1] != 2){
 						if (config.game_board.field[y][x+1][1] == 0){
-							config.game_board.field[y][x][1] = 2;
+							place = 1;
 						}
 						if (config.game_board.field[y][x-1][1] == 0){
-							config.game_board.field[y][x][1] = 2;
+							place = 1;
 						}
 						if (config.game_board.field[y+1][x][1] == 0){
-							config.game_board.field[y][x][1] = 2;
+							place = 1;
 						}
 						if (config.game_board.field[y-1][x][1] == 0){
-							config.game_board.field[y][x][1] = 2;
+							place = 1;
 						}
 						if (config.game_board.field[y+1][x+1][1] == 0){
-							config.game_board.field[y][x][1] = 2;
+							place = 1;
 						}
 						if (config.game_board.field[y-1][x-1][1] == 0){
-							config.game_board.field[y][x][1] = 2;
+							place = 1;
 						}
 						if (config.game_board.field[y+1][x-1][1] == 0){
-							config.game_board.field[y][x][1] = 2;
+							place = 1;
 						}
 						if (config.game_board.field[y-1][x+1][1] == 0){
-							config.game_board.field[y][x][1] = 2;
+							place = 1;
 						}
 					}
 				}
 			}
+			if (place == 1)
+			{
+				if (config.game_board.field[y][x][1] != 2)
+				{
+					config.game_board.field[y][x][1] = 2;
+				}
+			}
+		place = 0;
 		}
 	}
 	return config;
@@ -484,7 +527,14 @@ Tconfig show_bombs(Tconfig config){
 	for (y = 1; y <= config.game_board.height; y++) {
 		for (x = 1; x <= config.game_board.width; x++) {
 			if (config.game_board.field[y][x][0] == -1){
-				config.game_board.field[y][x][1] = 0;
+				if (config.game_board.field[y][x][1] == 1)
+				{
+					config.game_board.field[y][x][1] = 0;
+				}
+				if (config.game_board.field[y][x][1] == 3)
+				{
+					config.game_board.field[y][x][1] = 4;
+				}
 			}
 		}
 	}
@@ -519,7 +569,7 @@ Tconfig diff_inputs(Tconfig config){
 	return config;
 }
 
-Tconfig prepare_board(Tconfig config, int width, int height){
+Tconfig prepare_board(Tconfig config, int width, int height, int mines){
 	int y, x;
 	config.game_board.status = 0;
 	config.game_board.update_map = 0;
@@ -540,9 +590,9 @@ Tconfig prepare_board(Tconfig config, int width, int height){
 	
 	config.game_info.width = (config.game_screen.height*2)-1;
 	config.game_info.y = -(height+3);
-	config.game_board.mines = 10;
-	config.game_board.flags = config.game_board.mines;
-	config.game_board.freeCells = (width*height)-config.game_board.mines;
+	config.game_board.mines = mines;
+	config.game_board.flags = mines;
+	config.game_board.freeCells = (width*height)-mines;
 	
 	return config;
 }
@@ -550,17 +600,7 @@ Tconfig prepare_board(Tconfig config, int width, int height){
 Tconfig gen_board(Tconfig config)
 {
 	int y, x, mines, cont;
-	switch (config.game_board.dif) {
-		case 0:
-			mines = 10;
-		break;
-		case 1:
-			mines = 40;
-		break;
-		case 2:
-			mines = 100;
-		break;
-	}
+	mines = config.game_board.mines;
 	while(mines > 0){
 		if ((rand()%10) == 0)
 		{
