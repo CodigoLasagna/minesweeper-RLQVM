@@ -271,6 +271,18 @@ void draw_board(Tconfig config){
 			}
 		}
 	}
+	if (config.game_board.status == 3)
+	{
+		wattron(config.game_screen.win, COLOR_PAIR(2));
+		mvwprintw(config.game_screen.win, config.game_screen.height/2, (config.game_screen.width/2)-8, "[CAMPO DESPEJADO]");
+		wattroff(config.game_screen.win, COLOR_PAIR(2));
+	}
+	if (config.game_board.status == 2)
+	{
+		wattron(config.game_screen.win, COLOR_PAIR(1));
+		mvwprintw(config.game_screen.win, config.game_screen.height/2, (config.game_screen.width/2)-7, "[FIN DEL JUEGO]");
+		wattroff(config.game_screen.win, COLOR_PAIR(1));
+	}
 }
 
 void draw_status(Tconfig config)
@@ -522,6 +534,7 @@ Tconfig clear_mist(Tconfig config){
 	}
 	return config;
 }
+
 Tconfig show_bombs(Tconfig config){
 	int x, y;
 	for (y = 1; y <= config.game_board.height; y++) {
@@ -615,6 +628,7 @@ Tconfig gen_board(Tconfig config)
 			}
 		}
 	}
+	
 	for (y = 1; y <= config.game_board.height; y++){
 		for (x = 1; x <= config.game_board.width; x++){
 			cont = 0;
