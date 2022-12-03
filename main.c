@@ -43,7 +43,7 @@ Tconfig show_bombs(Tconfig config);
 int main(){
 	Tconfig config = {0, 0, '0'};
 	int MAX_WIDTH, MAX_HEIGHT;
-	srand(time(NULL));
+	srand(10);
 	lncurses();
 	getmaxyx(stdscr, MAX_HEIGHT, MAX_WIDTH);
 	config = prepare_board(config, 19, 19, 0);
@@ -57,9 +57,9 @@ int main(){
 	config.buttons[1] = create_button(0, 0, "Dificultad", 0, -1, 0);
 	config.buttons[2] = create_button(0, 1, "Salir", 0, -1, 0);
 	
-	config.buttons[3] = create_button(0, -1,"Facil  9x9", 0, -1, 0);
-	config.buttons[4] = create_button(0, 0, "Normal 13x13", 0, -1, 0);
-	config.buttons[5] = create_button(0, 1, "Dificil 17x17", 0, -1, 0);
+	config.buttons[3] = create_button(0, -1,"Facil  9x9 [10M]", 0, -1, 0);
+	config.buttons[4] = create_button(0, 0, "Normal 13x13 [40M]", 0, -1, 0);
+	config.buttons[5] = create_button(0, 1, "Dificil 17x17 [100M]", 0, -1, 0);
 	config.buttons[6] = create_button(0, 2, "Volver", 0, -1, 0);
 	
 	game_loop(update, draw, inputs, config);
@@ -143,12 +143,14 @@ Tconfig update_board(Tconfig config)
 		if (config.game_board.status == 0){
 			config = gen_board(config);
 			config.game_board.status = 1;
+			config.game_board.smileyStatus = 0;
 		}
 		if (config.game_board.status < 2)
 		{
 			if (config.game_board.field[y][x][1] != 0)
 			{
 				config.game_board.field[y][x][1] = 0;
+				config.game_board.smileyStatus = 0;
 			}
 			
 			if (config.game_board.field[y][x][0] > 0){
@@ -156,8 +158,27 @@ Tconfig update_board(Tconfig config)
 				{
 					config.game_board.field[y][x][1] = 2;
 				}
+				switch (config.game_board.field[y][x][0]) {
+					case 1:
+					case 2:
+						config.game_board.smileyStatus = 1;
+					break;
+					case 3:
+					case 4:
+						config.game_board.smileyStatus = 2;
+					break;
+					case 5:
+					case 6:
+						config.game_board.smileyStatus = 3;
+					break;
+					case 7:
+					case 8:
+						config.game_board.smileyStatus = 4;
+					break;
+				}
 			}
 			if (config.game_board.field[y][x][0] == -1){
+				config.game_board.smileyStatus = 5;
 				config = show_bombs(config);
 				config.game_board.status = 2;
 			}else{
@@ -186,6 +207,7 @@ Tconfig update_board(Tconfig config)
 	if (cells == 0)
 	{
 		config.game_board.status = 3;
+		config.game_board.smileyStatus = 7;
 	}
 	return config;
 }
@@ -288,8 +310,66 @@ void draw_board(Tconfig config){
 void draw_status(Tconfig config)
 {
 	draw_container(config.game_info, C_YELLOW, C_NONE, 1);
-	mvwprintw(config.game_info.win, 1, 2, "[V]: %i", config.game_board.flags);
-	mvwprintw(config.game_info.win, 2, 2, "[#]: %i", config.game_board.freeCells);
+	wattron(config.game_info.win, COLOR_PAIR(3));
+	mvwprintw(config.game_info.win, 0, (config.game_screen.width/2)-9, "[ESTATUS DEL JUEGO]");
+	mvwprintw(config.game_info.win, 2, 3, "[ ]: %i", config.game_board.flags);
+	wattron(config.game_info.win, COLOR_PAIR(1));
+	mvwprintw(config.game_info.win, 2, 4, "V");
+	wattroff(config.game_info.win, COLOR_PAIR(1));
+	wattron(config.game_info.win, COLOR_PAIR(3));
+	mvwprintw(config.game_info.win, 3, 3, "[ ]: %i", config.game_board.freeCells);
+	wattron(config.game_info.win, COLOR_PAIR(7));
+	mvwprintw(config.game_info.win, 3, 4, "#");
+	wattroff(config.game_info.win, COLOR_PAIR(7));
+	/*Smiley*/
+	switch (config.game_board.smileyStatus) {
+		case 0:
+			wattron(config.game_info.win, COLOR_PAIR(2));
+			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "['u']");
+			wattroff(config.game_info.win, COLOR_PAIR(2));
+		break;
+		case 1:
+			wattron(config.game_info.win, COLOR_PAIR(3));
+			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "['o']");
+			wattroff(config.game_info.win, COLOR_PAIR(3));
+		break;
+		case 2:
+			wattron(config.game_info.win, COLOR_PAIR(5));
+			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "['-']");
+			wattroff(config.game_info.win, COLOR_PAIR(5));
+		break;
+		case 3:
+			wattron(config.game_info.win, COLOR_PAIR(4));
+			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "[;-;]");
+			wattroff(config.game_info.win, COLOR_PAIR(4));
+		break;
+		case 4:
+			wattron(config.game_info.win, COLOR_PAIR(1));
+			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "[TnT]");
+			wattroff(config.game_info.win, COLOR_PAIR(1));
+		break;
+		case 5:
+			wattron(config.game_info.win, COLOR_PAIR(1));
+			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "[x-x]");
+			wattroff(config.game_info.win, COLOR_PAIR(1));
+		break;
+		case 6:
+			wattron(config.game_info.win, COLOR_PAIR(6));
+			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "[-^-]");
+			wattroff(config.game_info.win, COLOR_PAIR(6));
+		break;
+		case 7:
+			wattron(config.game_info.win, A_BOLD | COLOR_PAIR(2));
+			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "[>v<]");
+			wattroff(config.game_info.win, A_BOLD | COLOR_PAIR(2));
+		break;
+	}
+	if (config.game_board.status >= 2)
+	{
+		wattron(config.game_info.win, COLOR_PAIR(6));
+		mvwprintw(config.game_info.win, 4, (config.game_info.width/2)-11, "[Presione Q para salir]");
+		wattroff(config.game_info.win, COLOR_PAIR(6));
+	}
 }
 
 void draw_diff(Tconfig config){
@@ -379,11 +459,13 @@ Tconfig board_inputs(Tconfig config){
 				config.game_board.field[y][x][1] = 3;
 				config.game_board.flags--;
 			}
+			config.game_board.smileyStatus = 6;
 		}
 		else if (config.game_board.field[y][x][1] == 3)
 		{
 			config.game_board.field[y][x][1] = 1;
 			config.game_board.flags++;
+			config.game_board.smileyStatus = 2;
 		}
 	}
 	if (key == '\n' || key == ' ')
@@ -584,6 +666,7 @@ Tconfig diff_inputs(Tconfig config){
 
 Tconfig prepare_board(Tconfig config, int width, int height, int mines){
 	int y, x;
+	config.game_board.smileyStatus = 2;
 	config.game_board.status = 0;
 	config.game_board.update_map = 0;
 	config.game_board.width = width;

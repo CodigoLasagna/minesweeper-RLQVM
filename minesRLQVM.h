@@ -47,6 +47,8 @@ typedef struct _board{
 	int mines;
 	int flags;
 	int freeCells;
+	int hearts;
+	int smileyStatus;
 }Tboard;
 
 /*La estructura para controlar configuraciones generales del juego*/

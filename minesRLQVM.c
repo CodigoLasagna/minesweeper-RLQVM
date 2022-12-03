@@ -1,5 +1,4 @@
 #include "minesRLQVM.h"
-#include <curses.h>
 
 void lncurses(){
 	initscr();
