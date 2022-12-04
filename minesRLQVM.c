@@ -2,6 +2,16 @@
 
 void lncurses(){
 	initscr();
+	#ifdef _WIN32
+	stdscr = initscr();
+	DWORD dwMode = 0;
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hOut != INVALID_HANDLE_VALUE) {
+		if (GetConsoleMode(hOut, &dwMode)) {
+			SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+		}
+	}
+	#endif
 	noecho();
 	cbreak();
 	curs_set(FALSE);
@@ -9,14 +19,14 @@ void lncurses(){
 	keypad(stdscr,TRUE);
 	use_default_colors();
 	start_color();
-	init_pair(0, 0, -1);
-	init_pair(1, 1, -1);
-	init_pair(2, 2, -1);
-	init_pair(3, 3, -1);
-	init_pair(4, 4, -1);
-	init_pair(5, 5, -1);
-	init_pair(6, 6, -1);
-	init_pair(7, 7, -1);
+	init_pair(1, 0, -1);
+	init_pair(2, 1, -1);
+	init_pair(3, 2, -1);
+	init_pair(4, 3, -1);
+	init_pair(5, 4, -1);
+	init_pair(6, 5, -1);
+	init_pair(7, 6, -1);
+	init_pair(8, 7, -1);
 }
 
 void game_loop(Tconfig update(), void draw(), Tconfig inputs(), Tconfig config)

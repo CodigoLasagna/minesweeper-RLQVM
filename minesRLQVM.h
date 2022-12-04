@@ -6,14 +6,14 @@
 
 /*Configura colores esenciales*/
 #define C_NONE		-1
-#define C_BLACK		0
-#define C_RED		1
-#define C_GREEN		2
-#define C_YELLOW	3
-#define C_BLUE		4
-#define C_MAGENTA	5
-#define C_CYAN		6
-#define C_WHITE		7
+#define C_BLACK		1
+#define C_RED		2
+#define C_GREEN		3
+#define C_YELLOW	4
+#define C_BLUE		5
+#define C_MAGENTA	6
+#define C_CYAN		7
+#define C_WHITE		8
 
 /*La estructura para manejar ventanas*/
 typedef struct _tcontainer{
@@ -49,6 +49,9 @@ typedef struct _board{
 	int freeCells;
 	int hearts;
 	int smileyStatus;
+	int altModes;
+	int delta;
+	int timer;
 }Tboard;
 
 /*La estructura para controlar configuraciones generales del juego*/
@@ -57,7 +60,7 @@ typedef struct _tconfig{
 	int button_id;
 	int key;
 	Tcontainer menu, game_screen, difficulty;
-	Tcontainer game_info;
+	Tcontainer game_info, ranking;
 	Tbutton buttons[8];
 	Tboard game_board;
 }Tconfig;

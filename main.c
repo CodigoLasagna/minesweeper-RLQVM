@@ -40,39 +40,47 @@ Tconfig spiral_clear(Tconfig config);
 Tconfig clear_mist(Tconfig config);
 Tconfig show_bombs(Tconfig config);
 
-int main(){
+int main()
+{
 	Tconfig config = {0, 0, '0'};
 	int MAX_WIDTH, MAX_HEIGHT;
-	srand(10);
+	srand(time(NULL));
 	lncurses();
 	getmaxyx(stdscr, MAX_HEIGHT, MAX_WIDTH);
 	config = prepare_board(config, 19, 19, 0);
+	config.game_board.altModes = 0;
 	
 	config.menu = create_container(0, 0, 31, 15, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
 	config.game_screen = create_container(0, 0, 34, 17, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
 	config.difficulty = create_container(0, 0, 31, 15, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
 	config.game_info = create_container(0, 12, 37, 6, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
+	config.ranking = create_container(0, 0, 17, 12, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
 	change_screen(config, 0);
 	config.buttons[0] = create_button(0, -1,"Iniciar juego", 0, -1, 0);
 	config.buttons[1] = create_button(0, 0, "Dificultad", 0, -1, 0);
 	config.buttons[2] = create_button(0, 1, "Salir", 0, -1, 0);
 	
-	config.buttons[3] = create_button(0, -1,"Facil  9x9 [10M]", 0, -1, 0);
-	config.buttons[4] = create_button(0, 0, "Normal 13x13 [40M]", 0, -1, 0);
-	config.buttons[5] = create_button(0, 1, "Dificil 17x17 [100M]", 0, -1, 0);
-	config.buttons[6] = create_button(0, 2, "Volver", 0, -1, 0);
+	config.buttons[3] = create_button(0, -2,"Facil  9x9 [10M]", 0, -1, 0);
+	config.buttons[4] = create_button(0, -1, "Normal 13x13 [40M]", 0, -1, 0);
+	config.buttons[5] = create_button(0, 0, "Dificil 17x17 [100M]", 0, -1, 0);
+	config.buttons[6] = create_button(0, 2, "Vidas [ ]", 0, -1, 0);
+	config.buttons[7] = create_button(0, 4, "Volver", 0, -1, 0);
+	
 	
 	game_loop(update, draw, inputs, config);
 	endwin();
 	return 0;
 }
 
-void change_screen(Tconfig config, int id){
+void change_screen(Tconfig config, int id)
+{
 	hide_panel(config.menu.pane);
 	hide_panel(config.game_screen.pane);
 	hide_panel(config.difficulty.pane);
 	hide_panel(config.game_info.pane);
-	switch (id) {
+	hide_panel(config.ranking.pane);
+	switch (id)
+	{
 		case 0:
 			show_panel(config.menu.pane);
 		break;
@@ -86,8 +94,10 @@ void change_screen(Tconfig config, int id){
 	}
 }
 
-Tconfig update(Tconfig config){
-	switch (config.game_status) {
+Tconfig update(Tconfig config)
+{
+	switch (config.game_status)
+	{
 		case 0:
 			config = update_menu(config);
 		break;
@@ -101,21 +111,29 @@ Tconfig update(Tconfig config){
 	return config;
 }
 
-Tconfig update_menu(Tconfig config){
+Tconfig update_menu(Tconfig config)
+{
 	int i;
-	if (config.button_id > 2){
+	if (config.button_id > 2)
+	{
 		config.button_id = 0;
 	}
-	if (config.button_id < 0){
+	if (config.button_id < 0)
+	{
 		config.button_id = 2;
 	}
-	for (i = 0; i < 3; i++){
-		if (config.button_id == i){
+	for (i = 0; i < 3; i++)
+	{
+		if (config.button_id == i)
+		{
 			config.buttons[config.button_id].ac = 1;
-			config.buttons[config.button_id].fg = 2;
-		}else{
+			config.buttons[config.button_id].fg = C_GREEN;
+		}
+		else
+		{
 			config.buttons[i].ac = 0;
-			config.buttons[i].fg = 0;
+			config.buttons[i].fg = C_BLACK;
+;
 		}
 	}
 	return config;
@@ -124,23 +142,32 @@ Tconfig update_menu(Tconfig config){
 Tconfig update_board(Tconfig config)
 {
 	int x, y, cells;
-	if (config.game_board.cursor_x >= config.game_board.width){
+	if (config.game_board.status < 2)
+	{
+		config.game_board.timer = time(NULL) - config.game_board.delta;
+	}
+	if (config.game_board.cursor_x >= config.game_board.width)
+	{
 		config.game_board.cursor_x = 0;
 	}
-	if (config.game_board.cursor_y >= config.game_board.height){
+	if (config.game_board.cursor_y >= config.game_board.height)
+	{
 		config.game_board.cursor_y = 0;
 	}
-	if (config.game_board.cursor_x < 0){
+	if (config.game_board.cursor_x < 0)
+	{
 		config.game_board.cursor_x = config.game_board.width-1;
 	}
-	if (config.game_board.cursor_y < 0){
+	if (config.game_board.cursor_y < 0)
+	{
 		config.game_board.cursor_y = config.game_board.height-1;
 	}
 	x = config.game_board.cursor_x+1;
 	y = config.game_board.cursor_y+1;
 	if (config.game_board.update_map)
 	{
-		if (config.game_board.status == 0){
+		if (config.game_board.status == 0)
+		{
 			config = gen_board(config);
 			config.game_board.status = 1;
 			config.game_board.smileyStatus = 0;
@@ -153,12 +180,14 @@ Tconfig update_board(Tconfig config)
 				config.game_board.smileyStatus = 0;
 			}
 			
-			if (config.game_board.field[y][x][0] > 0){
+			if (config.game_board.field[y][x][0] > 0)
+			{
 				if (config.game_board.field[y][x][1] != 2)
 				{
 					config.game_board.field[y][x][1] = 2;
 				}
-				switch (config.game_board.field[y][x][0]) {
+				switch (config.game_board.field[y][x][0])
+				{
 					case 1:
 					case 2:
 						config.game_board.smileyStatus = 1;
@@ -177,11 +206,20 @@ Tconfig update_board(Tconfig config)
 					break;
 				}
 			}
-			if (config.game_board.field[y][x][0] == -1){
-				config.game_board.smileyStatus = 5;
-				config = show_bombs(config);
-				config.game_board.status = 2;
-			}else{
+			if (config.game_board.field[y][x][0] == -1)
+			{
+				config.game_board.hearts--;
+				config.game_board.field[y][x][1] = 4;
+				config.game_board.smileyStatus = 8;
+				if (config.game_board.hearts == 0)
+				{
+					config.game_board.smileyStatus = 5;
+					config = show_bombs(config);
+					config.game_board.status = 2;
+				}
+			}
+			else
+			{
 				config = clear_mist(config);
 			}
 		}
@@ -189,8 +227,10 @@ Tconfig update_board(Tconfig config)
 	}
 	cells = config.game_board.width*config.game_board.height;
 	cells -= config.game_board.mines;
-	for(y = 1; y < config.game_board.width+1; y++){
-		for(x = 1; x < config.game_board.width+1; x++){
+	for(y = 1; y < config.game_board.width+1; y++)
+	{
+		for(x = 1; x < config.game_board.width+1; x++)
+		{
 			if (config.game_board.field[y][x][1] != 1)
 			{
 				if (config.game_board.field[y][x][1] != 3)
@@ -212,28 +252,35 @@ Tconfig update_board(Tconfig config)
 	return config;
 }
 
-Tconfig update_diffi(Tconfig config){
+Tconfig update_diffi(Tconfig config)
+{
 	int i;
-	if (config.button_id > 6){
+	if (config.button_id > 7){
 		config.button_id = 3;
 	}
 	if (config.button_id < 3){
-		config.button_id = 6;
+		config.button_id = 7;
 	}
-	for (i = 3; i < 7; i++){
-		if (config.button_id == i){
+	for (i = 3; i < 8; i++)
+	{
+		if (config.button_id == i)
+		{
 			config.buttons[config.button_id].ac = 1;
-			config.buttons[config.button_id].fg = 2;
-		}else{
+			config.buttons[config.button_id].fg = C_GREEN;
+		}
+		else
+		{
 			config.buttons[i].ac = 0;
-			config.buttons[i].fg = 0;
+			config.buttons[i].fg = C_BLACK;
 		}
 	}
 	return config;
 }
 
-void draw(Tconfig config){
-	switch (config.game_status) {
+void draw(Tconfig config)
+{
+	switch (config.game_status)
+	{
 		case 0:
 			draw_menu(config);
 		break;
@@ -247,141 +294,186 @@ void draw(Tconfig config){
 	}
 }
 
-void draw_menu(Tconfig config){
+void draw_menu(Tconfig config)
+{
 	int i;
-	draw_container(config.menu, C_MAGENTA, C_NONE, 0);
-	for (i = 0; i < 3; i++){
+	draw_container(config.menu, C_BLACK, C_NONE, 1);
+	for (i = 0; i < 3; i++)
+	{
 		draw_button(config.menu, config.buttons[i], 1, 1);
 	}
 }
 
-void draw_board(Tconfig config){
+void draw_board(Tconfig config)
+{
 	int x, y;
 	int xx, yy;
 	int cur = 0;
 	int num;
-	draw_container(config.game_screen, C_MAGENTA, C_NONE, 0);
+	draw_container(config.game_screen, C_BLACK, C_NONE, 1);
 	mvwaddch(config.game_screen.win, (config.game_board.cursor_y*2)+1, (config.game_board.cursor_x*4)+1, '[');
 	mvwaddch(config.game_screen.win, (config.game_board.cursor_y*2)+1, (config.game_board.cursor_x*4)+3, ']');
-	for (y = 1; y <= config.game_board.height; y++){
-		for (x = 1; x <= config.game_board.width; x++){
+	for (y = 1; y <= config.game_board.height; y++)
+	{
+		for (x = 1; x <= config.game_board.width; x++)
+		{
 			xx = x-1;
 			yy = y-1;
 			num = config.game_board.field[y][x][0];
-			if (num > 0){
-				wattron(config.game_screen.win, A_BOLD | COLOR_PAIR(num+1));
+			if (num > 0)
+			{
+				wattron(config.game_screen.win, A_BOLD | COLOR_PAIR(num+2));
 				mvwprintw(config.game_screen.win, (yy*2)+1, (xx*4)+2, "%i", config.game_board.field[y][x][0]);
-				wattroff(config.game_screen.win, A_BOLD | COLOR_PAIR(num+1));
+				wattroff(config.game_screen.win, A_BOLD | COLOR_PAIR(num+2));
 			}
-			if (config.game_board.field[y][x][0] == -1){
-				wattron(config.game_screen.win, A_BOLD | COLOR_PAIR(1));
+			if (config.game_board.field[y][x][0] == -1)
+			{
+				wattron(config.game_screen.win, A_BOLD | COLOR_PAIR(C_RED));
 				mvwaddch(config.game_screen.win, (yy*2)+1, (xx*4)+2, '*');
-				wattroff(config.game_screen.win, A_BOLD | COLOR_PAIR(1));
+				wattroff(config.game_screen.win, A_BOLD | COLOR_PAIR(C_RED));
 			}
-			if (config.game_board.field[y][x][1] == 1){
+			if (config.game_board.field[y][x][1] == 1)
+			{
+				wattron(config.game_screen.win, A_BOLD | COLOR_PAIR(C_BLACK));
 				mvwaddch(config.game_screen.win, (yy*2)+1, (xx*4)+2, '#');
+				wattroff(config.game_screen.win, A_BOLD | COLOR_PAIR(C_BLACK));
 			}
-			if (config.game_board.field[y][x][1] == 4){
-				wattron(config.game_screen.win, COLOR_PAIR(1));
+			if (config.game_board.field[y][x][1] == 4)
+			{
+				wattron(config.game_screen.win, COLOR_PAIR(C_RED));
 				mvwaddch(config.game_screen.win, (yy*2)+1, (xx*4)+2, 'O');
-				wattroff(config.game_screen.win, COLOR_PAIR(1));
+				wattroff(config.game_screen.win, COLOR_PAIR(C_RED));
 			}
-			if (config.game_board.field[y][x][1] == 3){
-				wattron(config.game_screen.win, COLOR_PAIR(1));
+			if (config.game_board.field[y][x][1] == 3)
+			{
+				wattron(config.game_screen.win, COLOR_PAIR(C_RED));
 				mvwaddch(config.game_screen.win, (yy*2)+1, (xx*4)+2, 'V');
-				wattroff(config.game_screen.win, COLOR_PAIR(1));
+				wattroff(config.game_screen.win, COLOR_PAIR(C_RED));
 			}
 		}
 	}
 	if (config.game_board.status == 3)
 	{
-		wattron(config.game_screen.win, COLOR_PAIR(2));
-		mvwprintw(config.game_screen.win, config.game_screen.height/2, (config.game_screen.width/2)-8, "[CAMPO DESPEJADO]");
-		wattroff(config.game_screen.win, COLOR_PAIR(2));
+		wattron(config.game_screen.win, COLOR_PAIR(C_GREEN));
+		mvwprintw(config.game_screen.win, config.game_screen.height-1, (config.game_screen.width/2)-8, "[CAMPO DESPEJADO]");
+		wattroff(config.game_screen.win, COLOR_PAIR(C_GREEN));
 	}
 	if (config.game_board.status == 2)
 	{
-		wattron(config.game_screen.win, COLOR_PAIR(1));
-		mvwprintw(config.game_screen.win, config.game_screen.height/2, (config.game_screen.width/2)-7, "[FIN DEL JUEGO]");
-		wattroff(config.game_screen.win, COLOR_PAIR(1));
+		wattron(config.game_screen.win, COLOR_PAIR(C_RED));
+		mvwprintw(config.game_screen.win, config.game_screen.height-1, (config.game_screen.width/2)-7, "[FIN DEL JUEGO]");
+		wattroff(config.game_screen.win, COLOR_PAIR(C_RED));
 	}
 }
 
 void draw_status(Tconfig config)
 {
+	int i;
 	draw_container(config.game_info, C_YELLOW, C_NONE, 1);
-	wattron(config.game_info.win, COLOR_PAIR(3));
+	wattron(config.game_info.win, COLOR_PAIR(C_YELLOW));
+	mvwprintw(config.game_info.win, 2, (config.game_info.width)-10, "[T]: %i", config.game_board.timer);
 	mvwprintw(config.game_info.win, 0, (config.game_screen.width/2)-9, "[ESTATUS DEL JUEGO]");
 	mvwprintw(config.game_info.win, 2, 3, "[ ]: %i", config.game_board.flags);
-	wattron(config.game_info.win, COLOR_PAIR(1));
+	wattroff(config.game_info.win, COLOR_PAIR(C_YELLOW));
+	wattron(config.game_info.win, COLOR_PAIR(C_RED));
 	mvwprintw(config.game_info.win, 2, 4, "V");
-	wattroff(config.game_info.win, COLOR_PAIR(1));
-	wattron(config.game_info.win, COLOR_PAIR(3));
+	wattroff(config.game_info.win, COLOR_PAIR(C_RED));
+	wattron(config.game_info.win, COLOR_PAIR(C_YELLOW));
 	mvwprintw(config.game_info.win, 3, 3, "[ ]: %i", config.game_board.freeCells);
-	wattron(config.game_info.win, COLOR_PAIR(7));
+	wattroff(config.game_info.win, COLOR_PAIR(C_YELLOW));
+	wattron(config.game_info.win, COLOR_PAIR(C_CYAN));
 	mvwprintw(config.game_info.win, 3, 4, "#");
-	wattroff(config.game_info.win, COLOR_PAIR(7));
+	wattroff(config.game_info.win, COLOR_PAIR(C_CYAN));
 	/*Smiley*/
-	switch (config.game_board.smileyStatus) {
+	switch (config.game_board.smileyStatus)
+	{
 		case 0:
-			wattron(config.game_info.win, COLOR_PAIR(2));
+			wattron(config.game_info.win, COLOR_PAIR(C_GREEN));
 			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "['u']");
-			wattroff(config.game_info.win, COLOR_PAIR(2));
+			wattroff(config.game_info.win, COLOR_PAIR(C_GREEN));
 		break;
 		case 1:
-			wattron(config.game_info.win, COLOR_PAIR(3));
+			wattron(config.game_info.win, COLOR_PAIR(C_YELLOW));
 			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "['o']");
-			wattroff(config.game_info.win, COLOR_PAIR(3));
+			wattroff(config.game_info.win, COLOR_PAIR(C_YELLOW));
 		break;
 		case 2:
-			wattron(config.game_info.win, COLOR_PAIR(5));
+			wattron(config.game_info.win, COLOR_PAIR(C_MAGENTA));
 			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "['-']");
-			wattroff(config.game_info.win, COLOR_PAIR(5));
+			wattroff(config.game_info.win, COLOR_PAIR(C_MAGENTA));
 		break;
 		case 3:
-			wattron(config.game_info.win, COLOR_PAIR(4));
+			wattron(config.game_info.win, COLOR_PAIR(C_BLUE));
 			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "[;-;]");
-			wattroff(config.game_info.win, COLOR_PAIR(4));
+			wattroff(config.game_info.win, COLOR_PAIR(C_BLUE));
 		break;
 		case 4:
-			wattron(config.game_info.win, COLOR_PAIR(1));
+			wattron(config.game_info.win, COLOR_PAIR(C_CYAN));
 			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "[TnT]");
-			wattroff(config.game_info.win, COLOR_PAIR(1));
+			wattroff(config.game_info.win, COLOR_PAIR(C_CYAN));
 		break;
 		case 5:
-			wattron(config.game_info.win, COLOR_PAIR(1));
+			wattron(config.game_info.win, COLOR_PAIR(C_RED));
 			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "[x-x]");
-			wattroff(config.game_info.win, COLOR_PAIR(1));
+			wattroff(config.game_info.win, COLOR_PAIR(C_RED));
 		break;
 		case 6:
-			wattron(config.game_info.win, COLOR_PAIR(6));
+			wattron(config.game_info.win, COLOR_PAIR(C_BLUE));
 			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "[-^-]");
-			wattroff(config.game_info.win, COLOR_PAIR(6));
+			wattroff(config.game_info.win, COLOR_PAIR(C_BLUE));
 		break;
 		case 7:
-			wattron(config.game_info.win, A_BOLD | COLOR_PAIR(2));
+			wattron(config.game_info.win, A_BOLD | COLOR_PAIR(C_GREEN));
 			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "[>v<]");
-			wattroff(config.game_info.win, A_BOLD | COLOR_PAIR(2));
+			wattroff(config.game_info.win, A_BOLD | COLOR_PAIR(C_GREEN));
 		break;
+		case 8:
+			wattron(config.game_info.win, A_BOLD | COLOR_PAIR(C_MAGENTA));
+			mvwprintw(config.game_info.win, 2, (config.game_screen.width/2)-2, "[>n<]");
+			wattroff(config.game_info.win, A_BOLD | COLOR_PAIR(C_MAGENTA));
 	}
 	if (config.game_board.status >= 2)
 	{
-		wattron(config.game_info.win, COLOR_PAIR(6));
-		mvwprintw(config.game_info.win, 4, (config.game_info.width/2)-11, "[Presione Q para salir]");
-		wattroff(config.game_info.win, COLOR_PAIR(6));
+		wattron(config.game_info.win, COLOR_PAIR(C_YELLOW));
+		mvwprintw(config.game_info.win, 4, (config.game_info.width/2)-16, "[Presione [ENTER] para continuar]");
+		wattroff(config.game_info.win, COLOR_PAIR(C_YELLOW));
 	}
+	if (config.game_board.altModes == 1)
+	{
+		wattron(config.game_info.win, COLOR_PAIR(C_YELLOW));
+		mvwprintw(config.game_info.win, 3, (config.game_info.width)-3, "]");
+		mvwprintw(config.game_info.win, 3, (config.game_info.width)-12, "[");
+		wattroff(config.game_info.win, COLOR_PAIR(C_YELLOW));
+		wattron(config.game_info.win, COLOR_PAIR(C_RED));
+		for (i = 0; i < config.game_board.hearts; i++)
+		{
+			mvwprintw(config.game_info.win, 3, (config.game_info.width)-(5+(i*3)), "<3");
+		}
+		wattroff(config.game_info.win, COLOR_PAIR(C_RED));
+	}
+	
 }
 
-void draw_diff(Tconfig config){
+void draw_diff(Tconfig config)
+{
 	int i;
-	draw_container(config.difficulty, C_GREEN, C_NONE, 0);
-	for (i = 3; i < 7; i++){
+	draw_container(config.difficulty, C_BLACK, C_NONE, 1);
+	for (i = 3; i < 8; i++)
+	{
 		draw_button(config.difficulty, config.buttons[i], 1, 1);
 	}
+	if (config.game_board.altModes == 1)
+	{
+		wattron(config.difficulty.win, COLOR_PAIR(C_RED));
+		mvwprintw(config.difficulty.win, (config.difficulty.height/2)+2, (config.difficulty.width/2)+3, "X");
+		wattroff(config.difficulty.win, COLOR_PAIR(C_RED));
+	}
 }
 
-Tconfig inputs(Tconfig config){
-	switch (config.game_status) {
+Tconfig inputs(Tconfig config)
+{
+	switch (config.game_status)
+	{
 		case 0:
 			config = menu_inputs(config);
 		break;
@@ -396,22 +488,28 @@ Tconfig inputs(Tconfig config){
 	return config;
 }
 
-Tconfig menu_inputs(Tconfig config){
+Tconfig menu_inputs(Tconfig config)
+{
 	int key = getch();
-	if (key == 's' || key == KEY_DOWN || key == 'k'){
+	if (key == 's' || key == KEY_DOWN || key == 'k')
+	{
 		config.button_id+=1;
 	}
-	if (key == 'w' || key == KEY_UP || key == 'l'){
+	if (key == 'w' || key == KEY_UP || key == 'l')
+	{
 		config.button_id-=1;
 	}
-	if (key == '\n' || key == ' '){
-		switch (config.button_id) {
+	if (key == '\n' || key == ' ')
+	{
+		switch (config.button_id)
+		{
 			case 2:
 				key = 'q';
 			break;
 			case 0:
 				config.game_status = 1;
-				switch (config.game_board.dif) {
+				switch (config.game_board.dif)
+				{
 					case 0:
 						config = prepare_board(config, 9, 9, 10);
 					break;
@@ -438,21 +536,26 @@ Tconfig menu_inputs(Tconfig config){
 Tconfig board_inputs(Tconfig config){
 	int key = getch();
 	int x, y;
-	if (key == 's' || key == KEY_DOWN || key == 'k'){
+	if (key == 's' || key == KEY_DOWN || key == 'k')
+	{
 		config.game_board.cursor_y+=1;
 	}
-	if (key == 'w' || key == KEY_UP || key == 'l'){
+	if (key == 'w' || key == KEY_UP || key == 'l')
+	{
 		config.game_board.cursor_y-=1;
 	}
-	if (key == 'd' || key == KEY_RIGHT || key == ';'){
+	if (key == 'd' || key == KEY_RIGHT || key == ';')
+	{
 		config.game_board.cursor_x+=1;
 	}
-	if (key == 'a' || key == KEY_LEFT || key == 'j'){
+	if (key == 'a' || key == KEY_LEFT || key == 'j')
+	{
 		config.game_board.cursor_x-=1;
 	}
 	x = config.game_board.cursor_x+1;
 	y = config.game_board.cursor_y+1;
-	if (key == 'f' && config.game_board.status == 1){
+	if (key == 'f' && config.game_board.status == 1)
+	{
 		if (config.game_board.field[y][x][1] == 1)
 		{
 			if (config.game_board.flags > 0){
@@ -470,9 +573,24 @@ Tconfig board_inputs(Tconfig config){
 	}
 	if (key == '\n' || key == ' ')
 	{
-		config.game_board.update_map = 1;
+		if (config.game_board.field[y][x][1] == 1)
+		{
+			config.game_board.update_map = 1;
+		}
+		if (config.game_board.status == 2)
+		{
+			config.game_status = 0;
+			config.button_id = 0;
+			change_screen(config, config.game_status);
+			key = '0';
+		}
+		if (config.game_board.status == 3)
+		{
+			show_panel(config.ranking.pane);
+		}
 	}
-	if (key == 'q'){
+	if (key == 'q')
+	{
 		config.game_status = 0;
 		config.button_id = 0;
 		change_screen(config, config.game_status);
@@ -482,41 +600,16 @@ Tconfig board_inputs(Tconfig config){
 	return config;
 }
 
-Tconfig spiral_clear(Tconfig config){
+Tconfig spiral_clear(Tconfig config)
+{
 	int i, x, y, dir = 0, current_step = 1, max_steps = 1, turn_cont = 0;
 	short place = 0;
 	x = config.game_board.width/2;
 	y = config.game_board.height/2;
 	x++;
 	y++;
-	for (i = 0; i < (config.game_board.width*config.game_board.height)-1; i++){
-		switch (dir) {
-			case 0:
-				x++;
-			break;
-			case 1:
-				y++;
-			break;
-			case 2:
-				x--;
-			break;
-			case 3:
-				y--;
-			break;
-		}
-		if (current_step >= max_steps){
-			current_step = 0;
-			turn_cont++;
-			dir++;
-		}
-		if (turn_cont >= 2){
-			turn_cont = 0;
-			max_steps++;
-		}
-		if (dir > 3){
-			dir = 0;
-		}
-		current_step++;
+	for (i = 0; i < (config.game_board.width*config.game_board.height); i++)
+	{
 		if (config.game_board.field[y][x+1][1] == 0){
 			place = 1;
 		}
@@ -563,42 +656,88 @@ Tconfig spiral_clear(Tconfig config){
 			}
 		}
 		place = 0;
+		switch (dir)
+		{
+			case 0:
+				x++;
+			break;
+			case 1:
+				y++;
+			break;
+			case 2:
+				x--;
+			break;
+			case 3:
+				y--;
+			break;
+		}
+		if (current_step >= max_steps)
+		{
+			current_step = 0;
+			turn_cont++;
+			dir++;
+		}
+		if (turn_cont >= 2)
+		{
+			turn_cont = 0;
+			max_steps++;
+		}
+		if (dir > 3)
+		{
+			dir = 0;
+		}
+		current_step++;
 	}
 	return config;
 }
 
-Tconfig clear_mist(Tconfig config){
+Tconfig clear_mist(Tconfig config)
+{
 	int i, x, y, place = 0;
-	for (i = 0; i <= 10; i++){
+	for (i = 0; i <= 10; i++)
+	{
 		config = spiral_clear(config);
 	}
-	for (y = 1; y <= config.game_board.height; y++) {
-		for (x = 1; x <= config.game_board.width; x++) {
-			if (config.game_board.field[y][x][0] > 0){
-				if (config.game_board.field[y][x][1] != 3){
-					if (config.game_board.field[y][x][1] != 2){
-						if (config.game_board.field[y][x+1][1] == 0){
+	for (y = 1; y <= config.game_board.height; y++)
+	{
+		for (x = 1; x <= config.game_board.width; x++) 
+		{
+			if (config.game_board.field[y][x][0] > 0)
+			{
+				if (config.game_board.field[y][x][1] != 3)
+				{
+					if (config.game_board.field[y][x][1] != 2)
+					{
+						if (config.game_board.field[y][x+1][1] == 0)
+						{
 							place = 1;
 						}
-						if (config.game_board.field[y][x-1][1] == 0){
+						if (config.game_board.field[y][x-1][1] == 0)
+						{
 							place = 1;
 						}
-						if (config.game_board.field[y+1][x][1] == 0){
+						if (config.game_board.field[y+1][x][1] == 0)
+						{
 							place = 1;
 						}
-						if (config.game_board.field[y-1][x][1] == 0){
+						if (config.game_board.field[y-1][x][1] == 0)
+						{
 							place = 1;
 						}
-						if (config.game_board.field[y+1][x+1][1] == 0){
+						if (config.game_board.field[y+1][x+1][1] == 0)
+						{
 							place = 1;
 						}
-						if (config.game_board.field[y-1][x-1][1] == 0){
+						if (config.game_board.field[y-1][x-1][1] == 0)
+						{
 							place = 1;
 						}
-						if (config.game_board.field[y+1][x-1][1] == 0){
+						if (config.game_board.field[y+1][x-1][1] == 0)
+						{
 							place = 1;
 						}
-						if (config.game_board.field[y-1][x+1][1] == 0){
+						if (config.game_board.field[y-1][x+1][1] == 0)
+						{
 							place = 1;
 						}
 					}
@@ -617,11 +756,15 @@ Tconfig clear_mist(Tconfig config){
 	return config;
 }
 
-Tconfig show_bombs(Tconfig config){
+Tconfig show_bombs(Tconfig config)
+{
 	int x, y;
-	for (y = 1; y <= config.game_board.height; y++) {
-		for (x = 1; x <= config.game_board.width; x++) {
-			if (config.game_board.field[y][x][0] == -1){
+	for (y = 1; y <= config.game_board.height; y++)
+	{
+		for (x = 1; x <= config.game_board.width; x++)
+		{
+			if (config.game_board.field[y][x][0] == -1)
+			{
 				if (config.game_board.field[y][x][1] == 1)
 				{
 					config.game_board.field[y][x][1] = 0;
@@ -636,16 +779,21 @@ Tconfig show_bombs(Tconfig config){
 	return config;
 }
 
-Tconfig diff_inputs(Tconfig config){
+Tconfig diff_inputs(Tconfig config)
+{
 	int key = getch();
-	if (key == 's' || key == KEY_DOWN || key == 'k'){
+	if (key == 's' || key == KEY_DOWN || key == 'k')
+	{
 		config.button_id+=1;
 	}
-	if (key == 'w' || key == KEY_UP || key == 'l'){
+	if (key == 'w' || key == KEY_UP || key == 'l')
+	{
 		config.button_id-=1;
 	}
-	if (key == '\n' || key == ' '){
-		switch (config.button_id) {
+	if (key == '\n' || key == ' ')
+	{
+		switch (config.button_id)
+		{
 			case 3:
 				config.game_board.dif = 0;
 			break;
@@ -655,17 +803,33 @@ Tconfig diff_inputs(Tconfig config){
 			case 5:
 				config.game_board.dif = 2;
 			break;
+			case 6:
+				config.game_board.altModes = !config.game_board.altModes;
+			break;
 		}
-		config.game_status = 0;
-		change_screen(config, 0);
-		config.button_id = 0;
+		if (config.button_id != 6)
+		{
+			config.game_status = 0;
+			change_screen(config, 0);
+			config.button_id = 0;
+		}
 	}
 	config.key = key;
 	return config;
 }
 
-Tconfig prepare_board(Tconfig config, int width, int height, int mines){
+Tconfig prepare_board(Tconfig config, int width, int height, int mines)
+{
 	int y, x;
+	if (config.game_board.altModes == 1)
+	{
+		config.game_board.hearts = 3;
+	}
+	else
+	{
+		config.game_board.hearts = 1;
+	}
+	config.game_board.delta = time(NULL);
 	config.game_board.smileyStatus = 2;
 	config.game_board.status = 0;
 	config.game_board.update_map = 0;
@@ -677,8 +841,10 @@ Tconfig prepare_board(Tconfig config, int width, int height, int mines){
 	
 	config.game_screen.height = (height*2)+1;
 	config.game_screen.width = (config.game_screen.height*2)-1;
-	for (y = 0; y < 19; y++){
-		for (x = 0; x < 19; x++){
+	for (y = 0; y < 19; y++)
+	{
+		for (x = 0; x < 19; x++)
+		{
 			config.game_board.field[y][x][0] = -2;
 			config.game_board.field[y][x][1] = 1;
 		}
@@ -697,49 +863,68 @@ Tconfig gen_board(Tconfig config)
 {
 	int y, x, mines, cont;
 	mines = config.game_board.mines;
-	while(mines > 0){
+	while(mines > 0)
+	{
 		if ((rand()%10) == 0)
 		{
 			y = (rand()%config.game_board.height);
 			x = (rand()%config.game_board.width);
-			if (config.game_board.field[y+1][x+1][0] != -1){
+			if (config.game_board.field[y+1][x+1][0] != -1)
+			{
 				if (x != config.game_board.cursor_x && y != config.game_board.cursor_y)
 				{
-					config.game_board.field[y+1][x+1][0] = -1;
-					mines--;
+					if (x != config.game_board.cursor_x+1 && y != config.game_board.cursor_y)
+					{
+						if (x != config.game_board.cursor_x-1 && y != config.game_board.cursor_y)
+						{
+							config.game_board.field[y+1][x+1][0] = -1;
+							mines--;
+						}
+					}
 				}
 			}
 		}
 	}
 	
-	for (y = 1; y <= config.game_board.height; y++){
-		for (x = 1; x <= config.game_board.width; x++){
+	for (y = 1; y <= config.game_board.height; y++)
+	{
+		for (x = 1; x <= config.game_board.width; x++)
+		{
 			cont = 0;
-			if (config.game_board.field[y-1][x-1][0] == -1){
+			if (config.game_board.field[y-1][x-1][0] == -1)
+			{
 				cont++;
 			}
-			if (config.game_board.field[y+1][x+1][0] == -1){
+			if (config.game_board.field[y+1][x+1][0] == -1)
+			{
 				cont++;
 			}
-			if (config.game_board.field[y-1][x+1][0] == -1){
+			if (config.game_board.field[y-1][x+1][0] == -1)
+			{
 				cont++;
 			}
-			if (config.game_board.field[y+1][x-1][0] == -1){
+			if (config.game_board.field[y+1][x-1][0] == -1)
+			{
 				cont++;
 			}
-			if (config.game_board.field[y-1][x][0] == -1){
+			if (config.game_board.field[y-1][x][0] == -1)
+			{
 				cont++;
 			}
-			if (config.game_board.field[y][x-1][0] == -1){
+			if (config.game_board.field[y][x-1][0] == -1)
+			{
 				cont++;
 			}
-			if (config.game_board.field[y+1][x][0] == -1){
+			if (config.game_board.field[y+1][x][0] == -1)
+			{
 				cont++;
 			}
-			if (config.game_board.field[y][x+1][0] == -1){
+			if (config.game_board.field[y][x+1][0] == -1)
+			{
 				cont++;
 			}
-			if (config.game_board.field[y][x][0] == -2){
+			if (config.game_board.field[y][x][0] == -2)
+			{
 				config.game_board.field[y][x][0] = cont;
 			}
 			cont = 0;
