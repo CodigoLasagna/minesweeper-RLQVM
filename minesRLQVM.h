@@ -16,7 +16,8 @@
 #define C_WHITE		8
 
 /*La estructura para manejar ventanas*/
-typedef struct _tcontainer{
+typedef struct _tcontainer
+{
 	int term_w, term_h;
 	int width;
 	int height;
@@ -30,14 +31,16 @@ typedef struct _tcontainer{
 }Tcontainer;
 
 /*La estructura para controlar botones*/
-typedef struct _tbutton{
+typedef struct _tbutton
+{
 	int x, y;
 	char text[50], alt_text[50];
 	int fg, bg, ac;
 }Tbutton;
 
 /*La estructura para controlar el tablero de juego*/
-typedef struct _board{
+typedef struct _board
+{
 	int dif;
 	int width, height;
 	int cursor_x, cursor_y;
@@ -54,16 +57,35 @@ typedef struct _board{
 	int timer;
 }Tboard;
 
+typedef struct _trank{
+	int type;
+	char name[4];
+	int diff;
+	int time;
+	int hearts;
+}Trank;
+
+typedef struct _tind{
+	int time;
+	int pos;
+}Tind;
+
 /*La estructura para controlar configuraciones generales del juego*/
-typedef struct _tconfig{
+typedef struct _tconfig
+{
 	int game_status;
 	int button_id;
 	int key;
 	Tcontainer menu, game_screen, difficulty;
-	Tcontainer game_info, ranking;
+	Tcontainer game_info, name_input, ranking;
 	Tbutton buttons[8];
 	Tboard game_board;
+	char name[4];
+	int name_cid;
+	Tind ranks[500];
+	int n_ranks;
 }Tconfig;
+
 
 /*cargar funciones esenciales de Ncurses*/
 void lncurses();

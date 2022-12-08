@@ -6,8 +6,10 @@ void lncurses(){
 	stdscr = initscr();
 	DWORD dwMode = 0;
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (hOut != INVALID_HANDLE_VALUE) {
-		if (GetConsoleMode(hOut, &dwMode)) {
+	if (hOut != INVALID_HANDLE_VALUE)
+	{
+		if (GetConsoleMode(hOut, &dwMode))
+		{
 			SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 		}
 	}
@@ -55,37 +57,46 @@ Tcontainer create_container(int x, int y, int width, int height, int fg, int bg,
 	container.type = type;
 	container.term_w = term_w;
 	container.term_h = term_h;
-
-	if (type){
+	
+	if (type)
+	{
 		container.win = newwin(height, width, y+(term_h/2)-(height/2), x+(term_w/2)-(width/2));
-	}else{
+	}
+	else
+	{
 		container.win = newwin(height, width, 0, 0);
 	}
 	container.pane = new_panel(container.win);
 	draw_container(container, fg, bg, ac);
 	return container;
 }
-void draw_container(Tcontainer container, int fg, int bg, int ac){
+void draw_container(Tcontainer container, int fg, int bg, int ac)
+{
 	container.ac = ac;
 	container.fg = fg;
 	container.bg = bg;
 	werase(container.win);
 	wresize(container.win, container.height, container.width);
-	if (container.type == true){
+	if (container.type == true)
+	{
 		mvwin(container.win, container.y+(container.term_h/2)-(container.height/2), container.x+(container.term_w/2)-(container.width/2));
 	}
-	if (container.ac == false){
+	if (container.ac == false)
+	{
 		wattron(container.win, COLOR_PAIR(container.fg));
 		box(container.win, 0, 0);
 		wattroff(container.win, COLOR_PAIR(container.fg));
-	}else{
+	}
+	else
+	{
 		wattron(container.win, A_BOLD | COLOR_PAIR(container.fg));
 		box(container.win, 0, 0);
 		wattroff(container.win, A_BOLD | COLOR_PAIR(container.fg));
 	}
 }
 
-Tbutton create_button(int x, int y, char text[], int fg, int bg, int ac){
+Tbutton create_button(int x, int y, char text[], int fg, int bg, int ac)
+{
 	Tbutton button;
 	char altText[50];
 	int len = 0;
@@ -106,25 +117,34 @@ Tbutton create_button(int x, int y, char text[], int fg, int bg, int ac){
 	return button;
 }
 
-void draw_button(Tcontainer container, Tbutton button, int type_x, int type_y){
+void draw_button(Tcontainer container, Tbutton button, int type_x, int type_y)
+{
 	int len = 0, xx = 0, yy = 0;
-	if (button.ac){
+	if (button.ac)
+	{
 		len = strlen(button.alt_text);
-	}else{
+	}
+	else
+	{
 		len = strlen(button.text);
 	}
 	
-	if (type_y){
+	if (type_y)
+	{
 		yy = (container.height/2);
 	}
-	if (type_x){
+	if (type_x)
+	{
 		xx = (container.width/2)-(len/2);
 	}
 	
 	wattron(container.win, COLOR_PAIR(button.fg));
-	if (button.ac){
+	if (button.ac)
+	{
 		mvwprintw(container.win, button.y+yy, button.x+xx, "%s", button.alt_text);
-	}else{
+	}
+	else
+	{
 		mvwprintw(container.win, button.y+yy, button.x+xx, "%s", button.text);
 	}
 	wattroff(container.win, COLOR_PAIR(button.fg));

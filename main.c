@@ -40,13 +40,22 @@ Tconfig spiral_clear(Tconfig config);
 Tconfig clear_mist(Tconfig config);
 Tconfig show_bombs(Tconfig config);
 
+Tconfig input_name(Tconfig config, int key);
+Tconfig load_rank(Tconfig config);
+int shellSort(Tind indices[], int n);
+
 int main()
 {
 	Tconfig config = {0, 0, '0'};
 	int MAX_WIDTH, MAX_HEIGHT;
-	srand(time(NULL));
+	srand(10);
 	lncurses();
 	getmaxyx(stdscr, MAX_HEIGHT, MAX_WIDTH);
+	config.name[0] = '_';
+	config.name[1] = '_';
+	config.name[2] = '_';
+	config.name[3] = '\0';
+	config.name_cid = 0;
 	config = prepare_board(config, 19, 19, 0);
 	config.game_board.altModes = 0;
 	
@@ -54,7 +63,8 @@ int main()
 	config.game_screen = create_container(0, 0, 34, 17, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
 	config.difficulty = create_container(0, 0, 31, 15, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
 	config.game_info = create_container(0, 12, 37, 6, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
-	config.ranking = create_container(0, 0, 17, 12, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
+	config.name_input = create_container(0, 0, 9, 3, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
+	config.ranking = create_container(0, 0, 23, 17, 0, 0, 0, 1, MAX_WIDTH, MAX_HEIGHT);
 	change_screen(config, 0);
 	config.buttons[0] = create_button(0, -1,"Iniciar juego", 0, -1, 0);
 	config.buttons[1] = create_button(0, 0, "Dificultad", 0, -1, 0);
@@ -78,6 +88,7 @@ void change_screen(Tconfig config, int id)
 	hide_panel(config.game_screen.pane);
 	hide_panel(config.difficulty.pane);
 	hide_panel(config.game_info.pane);
+	hide_panel(config.name_input.pane);
 	hide_panel(config.ranking.pane);
 	switch (id)
 	{
@@ -133,7 +144,6 @@ Tconfig update_menu(Tconfig config)
 		{
 			config.buttons[i].ac = 0;
 			config.buttons[i].fg = C_BLACK;
-;
 		}
 	}
 	return config;
@@ -142,7 +152,7 @@ Tconfig update_menu(Tconfig config)
 Tconfig update_board(Tconfig config)
 {
 	int x, y, cells;
-	if (config.game_board.status < 2)
+	if (config.game_board.status == 1)
 	{
 		config.game_board.timer = time(NULL) - config.game_board.delta;
 	}
@@ -211,7 +221,7 @@ Tconfig update_board(Tconfig config)
 				config.game_board.hearts--;
 				config.game_board.field[y][x][1] = 4;
 				config.game_board.smileyStatus = 8;
-				if (config.game_board.hearts == 0)
+				if (config.game_board.hearts == 0 && config.game_board.status != 2)
 				{
 					config.game_board.smileyStatus = 5;
 					config = show_bombs(config);
@@ -246,8 +256,11 @@ Tconfig update_board(Tconfig config)
 	config.game_board.freeCells = cells;
 	if (cells == 0)
 	{
-		config.game_board.status = 3;
-		config.game_board.smileyStatus = 7;
+		if (config.game_board.status < 3)
+		{
+			config.game_board.status = 3;
+			config.game_board.smileyStatus = 7;
+		}
 	}
 	return config;
 }
@@ -306,13 +319,18 @@ void draw_menu(Tconfig config)
 
 void draw_board(Tconfig config)
 {
-	int x, y;
+	int x, y, i, h;
 	int xx, yy;
 	int cur = 0;
 	int num;
+	FILE *archivo;
+	Trank rank;
 	draw_container(config.game_screen, C_BLACK, C_NONE, 1);
+	draw_container(config.name_input, C_BLACK, C_NONE, 1);
+	draw_container(config.ranking, C_CYAN, C_NONE, 1);
 	mvwaddch(config.game_screen.win, (config.game_board.cursor_y*2)+1, (config.game_board.cursor_x*4)+1, '[');
 	mvwaddch(config.game_screen.win, (config.game_board.cursor_y*2)+1, (config.game_board.cursor_x*4)+3, ']');
+	mvwprintw(config.name_input.win, 1, 2, "%c %c %c", config.name[0], config.name[1], config.name[2]);
 	for (y = 1; y <= config.game_board.height; y++)
 	{
 		for (x = 1; x <= config.game_board.width; x++)
@@ -352,17 +370,50 @@ void draw_board(Tconfig config)
 			}
 		}
 	}
+	if (config.game_board.status == 2)
+	{
+		wattron(config.game_screen.win, COLOR_PAIR(C_RED));
+		mvwprintw(config.game_screen.win, config.game_screen.height-1, (config.game_screen.width/2)-7, "[FIN DEL JUEGO]");
+		wattroff(config.game_screen.win, COLOR_PAIR(C_RED));
+	}
 	if (config.game_board.status == 3)
 	{
 		wattron(config.game_screen.win, COLOR_PAIR(C_GREEN));
 		mvwprintw(config.game_screen.win, config.game_screen.height-1, (config.game_screen.width/2)-8, "[CAMPO DESPEJADO]");
 		wattroff(config.game_screen.win, COLOR_PAIR(C_GREEN));
 	}
-	if (config.game_board.status == 2)
+	if (config.game_board.status == 5)
 	{
-		wattron(config.game_screen.win, COLOR_PAIR(C_RED));
-		mvwprintw(config.game_screen.win, config.game_screen.height-1, (config.game_screen.width/2)-7, "[FIN DEL JUEGO]");
-		wattroff(config.game_screen.win, COLOR_PAIR(C_RED));
+		i = 0;
+		archivo = fopen("ranking.dat", "rb");
+		mvwprintw(config.ranking.win, 0, 1, "[NOM TIEM        DIF]");
+		if (config.game_board.dif+(config.game_board.altModes*3) > 2)
+		{
+			mvwprintw(config.ranking.win, 0, 11, "VIDAS");
+		}
+		if (archivo)
+		{
+			for (x = 0; x < config.n_ranks; x++)
+			{
+				fseek(archivo, config.ranks[x].pos*sizeof(Trank), SEEK_SET);
+				fread(&rank, sizeof(Trank), 1, archivo);
+				if (rank.type == config.game_board.dif+(config.game_board.altModes*3) && x < 15)
+				{
+					mvwprintw(config.ranking.win, i+1, 2, "%-4s %-12i %i", rank.name, rank.time, rank.diff+1);
+					if (rank.type > 2)
+					{
+						for(h = 0; h < rank.hearts; h++)
+						{
+							wattron(config.ranking.win, COLOR_PAIR(C_RED));
+							mvwprintw(config.ranking.win, i+1, 11+(h*2), "<3");
+							wattroff(config.ranking.win, COLOR_PAIR(C_RED));
+						}
+					}
+					i++;
+				}
+			}
+			fclose(archivo);
+		}
 	}
 }
 
@@ -381,9 +432,9 @@ void draw_status(Tconfig config)
 	wattron(config.game_info.win, COLOR_PAIR(C_YELLOW));
 	mvwprintw(config.game_info.win, 3, 3, "[ ]: %i", config.game_board.freeCells);
 	wattroff(config.game_info.win, COLOR_PAIR(C_YELLOW));
-	wattron(config.game_info.win, COLOR_PAIR(C_CYAN));
+	wattron(config.game_info.win, A_BOLD | COLOR_PAIR(C_BLACK));
 	mvwprintw(config.game_info.win, 3, 4, "#");
-	wattroff(config.game_info.win, COLOR_PAIR(C_CYAN));
+	wattroff(config.game_info.win, A_BOLD | COLOR_PAIR(C_CYAN));
 	/*Smiley*/
 	switch (config.game_board.smileyStatus)
 	{
@@ -536,21 +587,24 @@ Tconfig menu_inputs(Tconfig config)
 Tconfig board_inputs(Tconfig config){
 	int key = getch();
 	int x, y;
-	if (key == 's' || key == KEY_DOWN || key == 'k')
+	if (config.game_board.status < 4)
 	{
-		config.game_board.cursor_y+=1;
-	}
-	if (key == 'w' || key == KEY_UP || key == 'l')
-	{
-		config.game_board.cursor_y-=1;
-	}
-	if (key == 'd' || key == KEY_RIGHT || key == ';')
-	{
-		config.game_board.cursor_x+=1;
-	}
-	if (key == 'a' || key == KEY_LEFT || key == 'j')
-	{
-		config.game_board.cursor_x-=1;
+		if (key == 's' || key == KEY_DOWN || key == 'k')
+		{
+			config.game_board.cursor_y+=1;
+		}
+		if (key == 'w' || key == KEY_UP || key == 'l')
+		{
+			config.game_board.cursor_y-=1;
+		}
+		if (key == 'd' || key == KEY_RIGHT || key == ';')
+		{
+			config.game_board.cursor_x+=1;
+		}
+		if (key == 'a' || key == KEY_LEFT || key == 'j')
+		{
+			config.game_board.cursor_x-=1;
+		}
 	}
 	x = config.game_board.cursor_x+1;
 	y = config.game_board.cursor_y+1;
@@ -586,7 +640,8 @@ Tconfig board_inputs(Tconfig config){
 		}
 		if (config.game_board.status == 3)
 		{
-			show_panel(config.ranking.pane);
+			show_panel(config.name_input.pane);
+			config.game_board.status = 4;
 		}
 	}
 	if (key == 'q')
@@ -595,6 +650,15 @@ Tconfig board_inputs(Tconfig config){
 		config.button_id = 0;
 		change_screen(config, config.game_status);
 		key = '0';
+	}
+	if (config.game_board.status == 5)
+	{
+		config.game_status = 0;
+		change_screen(config, config.game_status);
+	}
+	if (config.game_board.status == 4)
+	{
+		config = input_name(config, key);
 	}
 	config.key = key;
 	return config;
@@ -931,4 +995,88 @@ Tconfig gen_board(Tconfig config)
 		}
 	}
 	return config;
+}
+
+Tconfig input_name(Tconfig config, int key)
+{
+	FILE *archivo;
+	Trank ranking;
+	if (key > 64 && key < 91 || key > 96 && key < 123)
+	{
+		if (config.name_cid < 3)
+		{
+			if (key > 96)
+			{
+				key -= 32;
+			}
+			config.name[config.name_cid] = key;
+			config.name_cid++;
+		}
+	}
+	if (key == KEY_BACKSPACE && config.name_cid > 0)
+	{
+		config.name_cid--;
+		config.name[config.name_cid] = '_';
+	}
+	if ((key == '\n' || key == ' ') && config.name_cid == 3)
+	{
+		if (config.game_board.status == 4)
+		{
+			hide_panel(config.name_input.pane);
+			show_panel(config.ranking.pane);
+			config.game_board.status = 5;
+			archivo = fopen("ranking.dat", "a+b");
+			if (archivo)
+			{
+				ranking.type = config.game_board.dif+(config.game_board.altModes*3);
+				ranking.name[0] = config.name[0];
+				ranking.name[1] = config.name[1];
+				ranking.name[2] = config.name[2];
+				ranking.name[3] = config.name[3];
+				ranking.diff = config.game_board.dif;
+				ranking.time = config.game_board.timer;
+				ranking.hearts = config.game_board.hearts;
+				fwrite(&ranking, sizeof(ranking), 1, archivo);
+				fclose(archivo);
+			}
+			config = load_rank(config);
+		}
+	}
+	return config;
+}
+
+Tconfig load_rank(Tconfig config)
+{
+	FILE *archivo;
+	Trank rank;
+	int i = 0;
+	archivo = fopen("ranking.dat", "rb");
+	if (archivo)
+	{
+		while (fread(&rank, sizeof(Trank), 1, archivo))
+		{
+			config.ranks[i].time = rank.time;
+			config.ranks[i].pos = i;
+			i++;
+		}
+		config.n_ranks = i;
+		fclose(archivo);
+		shellSort(config.ranks, i);
+	}
+	return config;
+}
+
+int shellSort(Tind indices[], int n) {
+	int interval, i = 0, j = 0;
+	Tind temp;
+	for (interval = n / 2; interval > 0; interval /= 2) {
+		for (i = interval; i < n; i += 1) {
+			temp = indices[i];
+			for (j = i; j >= interval && indices[j - interval].time > temp.time; j -= interval) {
+			  indices[j] = indices[j - interval];
+			}
+			indices[j] = temp;
+		}
+	}
+	return 0;
 }
