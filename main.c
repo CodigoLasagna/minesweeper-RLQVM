@@ -48,7 +48,7 @@ int main()
 {
 	Tconfig config = {0, 0, '0'};
 	int MAX_WIDTH, MAX_HEIGHT;
-	srand(10);
+	srand(time(NULL));
 	lncurses();
 	getmaxyx(stdscr, MAX_HEIGHT, MAX_WIDTH);
 	config.name[0] = '_';
