@@ -18,72 +18,74 @@
 /*La estructura para manejar ventanas*/
 typedef struct _tcontainer
 {
-	int term_w, term_h;
-	int width;
-	int height;
-	int x, y;
-	int fg, bg;
-	int ac;
-	int type;
-	WINDOW* win;
-	PANEL* pane;
-	
+	int term_w, term_h;/*variables para guardar el tamano de la terminal*/
+	int width, height;/*variables para guardar el tamaño del contenedor*/
+	int x, y;/*variables para guardar la posición del contenedor*/
+	int fg, bg;/*variables para guardar el color y fondo del contenedor*/
+	int ac;/*variable para guardar modo alterno de color*/
+	int type;/*variable para guardar tipo de contenedor*/
+	WINDOW* win;/*variable de ncurses para guardar ventana del contenedor*/
+	PANEL* pane;/*variable de ncurses para guardar panel del contenedor*/
 }Tcontainer;
 
 /*La estructura para controlar botones*/
 typedef struct _tbutton
 {
-	int x, y;
-	char text[50], alt_text[50];
-	int fg, bg, ac;
+	int x, y;/*varialbe para guardar la posición del botón*/
+	char text[50], alt_text[50];/*variables para guardar el texto normal y alternativo del botón*/
+	int fg, bg, ac;/*variables para guardar los colores del botón*/
 }Tbutton;
 
 /*La estructura para controlar el tablero de juego*/
 typedef struct _board
 {
-	int dif;
-	int width, height;
-	int cursor_x, cursor_y;
-	int field[19][19][2];
-	int status;
-	int update_map;
-	int mines;
-	int flags;
-	int freeCells;
-	int hearts;
-	int smileyStatus;
-	int altModes;
-	int delta;
-	int timer;
+	int dif;/*variable para guardar la dificultad del tablero/nivel*/
+	int width, height;/*variable para guardar el tamaño del tablero/nivel*/
+	int cursor_x, cursor_y;/*variable para guardar el cursor para jugar*/
+	int field[19][19][2];/*matriz tridimensional para guardar las casillas y sus propiedades*/
+	int status;/*variable para guardar el estatus de la partida*/
+	int update_map;/*variable para saber cuando actualizar el mapa en base a las acciones del jugador*/
+	int mines;/*variable para saber la cantidad de minas en el tablero*/
+	int flags;/*variable para saber la cantidad de banderas en el tablero*/
+	int freeCells;/*variable para saber la cantidad de casillas libres en el tablero*/
+	int hearts;/*variable para saber la cantidad de vidas en partida*/
+	int smileyStatus;/*variable para saber el estado de smiley*/
+	int altModes;/*variable para saber si se escoge el modo con vidas*/
+	int delta;/*variable para saber la diferencia de tiempo al inicio de partida*/
+	int timer;/*variable para guardar el tiempo como cronometro*/
 }Tboard;
 
-typedef struct _trank{
-	int type;
-	char name[4];
-	int diff;
-	int time;
-	int hearts;
+/*estructura para guardar ranking*/
+typedef struct _trank
+{
+	int type;/*saber que tipo de ranking es en base al modo y dificultad*/
+	char name[4];/*nombre del jugador*/
+	int diff;/*dificultad de la partida*/
+	int time;/*tiempo de juego*/
+	int hearts;/*cantidad de corazones o vidas*/
 }Trank;
 
-typedef struct _tind{
-	int time;
-	int pos;
+/*estructura para crear el indice de rankings*/
+typedef struct _tind
+{
+	int time;/*se toma en consideracion el tiempo como variable llave*/
+	int pos;/*se guarda la posición del ranking*/
 }Tind;
 
 /*La estructura para controlar configuraciones generales del juego*/
 typedef struct _tconfig
 {
-	int game_status;
-	int button_id;
-	int key;
-	Tcontainer menu, game_screen, difficulty;
-	Tcontainer game_info, name_input, ranking;
-	Tbutton buttons[8];
-	Tboard game_board;
-	char name[4];
-	int name_cid;
-	Tind ranks[500];
-	int n_ranks;
+	int game_status;/*estado general del juego*/
+	int button_id;/*id para saber que boton se tiene seleccionado*/
+	int key;/*variable para saber que tecla se presiono*/
+	Tcontainer menu, game_screen, difficulty;/*contenedores de menu, tablero y menu de dificultad*/
+	Tcontainer game_info, name_input, ranking;/*contenedores de info o estatus del juego, input para poner el nombre de usuario y ranking*/
+	Tbutton buttons[8];/*botones del juego*/
+	Tboard game_board;/*tablero del juego*/
+	char name[4];/*nombre de jugador*/
+	int name_cid;/*posición de cursor sobre el nombre del jugador*/
+	Tind ranks[3000];/*cantidad de rankings a cargar*/
+	int n_ranks;/*cantidad de rankings cargados*/
 }Tconfig;
 
 
