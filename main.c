@@ -54,7 +54,7 @@ int main()
 {
 	Tconfig config = {0, 0, '0'};				/*se prepara una con el game_status, id de boton seleccionado y el input*/
 	int MAX_WIDTH, MAX_HEIGHT;					/*variables para obtener el tamaño maximo de la terminal*/
-	srand(10);							/*se genera una semilla aleatoria para los niveles*/
+	srand(time(NULL));							/*se genera una semilla aleatoria para los niveles*/
 	lncurses();									/*se prepara el backend de la libreria ncurses*/
 	getmaxyx(stdscr, MAX_HEIGHT, MAX_WIDTH);	/*se obtiene el tamaño de la terminal*/
 	config.name[0] = '_';						/* se inicializa el nickname base para ael rank*/
